@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Complete Pytest Button Simulation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        button { padding: 8px 16px; margin: 5px; background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a87; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .collapsible { background: #f9f9f9; padding: 10px; margin: 5px 0; border: 1px solid #ddd; }
+        .test-item { margin: 5px 0; padding: 5px; border: 1px solid #ddd; }
+        #debug-log { max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .hidden { display: none !important; }
+        tr.collapsible { display: table-row; }
+        tr.collapsible.hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Simulazione Completa Pytest Button</h1>
+    
+    <div class="test-section">
+        <h2>Test con struttura completa</h2>
+        <button id="show_all_details">Show all details</button>&nbsp;/&nbsp;<button id="hide_all_details">Hide all details</button>
+        
+        <!-- Simula la struttura della tabella pytest -->
+        <table>
+            <tr class="collapsible" data-id="test-1">
+                <td>Test 1: Add Function</td>
+                <td>PASSED</td>
+                <td class="col-links">
+                    <a href="#">Details</a>
+                </td>
+            </tr>
+            <tr class="collapsible" data-id="test-2">
+                <td>Test 2: Subtract Function</td>
+                <td>PASSED</td>
+                <td class="col-links">
+                    <a href="#">Details</a>
+                </td>
+            </tr>
+        </table>
+        
+        <!-- Simula anche gli elementi div collapsible -->
+        <div class="test-item">
+            <h3>Test div 1</h3>
+            <div class="collapsible" data-id="div-test-1">
+                <p>Dettagli del Test div 1</p>
+                <pre>assert add(2, 3) == 5</pre>
+            </div>
+        </div>
+        
+        <div class="test-item">
+            <h3>Test div 2</h3>
+            <div class="collapsible" data-id="div-test-2">
+                <p>Dettagli del Test div 2</p>
+                <pre>assert subtract(5, 3) == 2</pre>
+            </div>
+        </div>
+    </div>
+    
+    <div class="debug">
+        <h3>Debug Log:</h3>
+        <div id="debug-log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+        <button onclick="manualTest()">Manual Test</button>
+        <button onclick="checkElements()">Check Elements</button>
+    </div>
+
+    <script>
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const debugLog = document.getElementById('debug-log');
+            debugLog.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(`[DEBUG] ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+        
+        function checkElements() {
+            log('=== CHECKING ELEMENTS ===');
+            
+            // Check buttons
+            const showBtn = document.getElementById('show_all_details');
+            const hideBtn = document.getElementById('hide_all_details');
+            log(`Show button: ${showBtn ? 'EXISTS' : 'NOT FOUND'}`);
+            log(`Hide button: ${hideBtn ? 'EXISTS' : 'NOT FOUND'}`);
+            
+            // Check collapsible elements
+            const collapsibles = document.querySelectorAll('.collapsible');
+            log(`Total collapsible elements: ${collapsibles.length}`);
+            
+            collapsibles.forEach((el, index) => {
+                const id = el.dataset.id || 'no-id';
+                const isHidden = el.classList.contains('hidden') || el.style.display === 'none';
+                log(`Element ${index}: id=${id}, hidden=${isHidden}, display=${el.style.display}`);
+            });
+        }
+        
+        function manualTest() {
+            log('=== MANUAL TEST ===');
+            const collapsibles = document.querySelectorAll('.collapsible');
+            
+            collapsibles.forEach((el, index) => {
+                const currentHidden = el.classList.contains('hidden');
+                if (currentHidden) {
+                    el.classList.remove('hidden');
+                    log(`Element ${index}: removed 'hidden' class`);
+                } else {
+                    el.classList.add('hidden');
+                    log(`Element ${index}: added 'hidden' class`);
+                }
+            });
+        }
+        
+        // Simulate pytest-html functionality
+        class TestManager {
+            constructor() {
+                this.renderData = {
+                    tests: Array.from(document.querySelectorAll('.collapsible')).map((el, index) => ({
+                        id: el.dataset.id || `test-${index}`
+                    }))
+                };
+                log(`TestManager initialized with ${this.renderData.tests.length} tests`);
+            }
+            
+            set allCollapsed(collapsed) {
+                log(`allCollapsed setter: ${collapsed}`);
+                const collapsibles = document.querySelectorAll('.collapsible');
+                
+                collapsibles.forEach((el, index) => {
+                    if (collapsed) {
+                        el.classList.add('hidden');
+                        log(`Element ${index}: hidden`);
+                    } else {
+                        el.classList.remove('hidden');
+                        log(`Element ${index}: shown`);
+                    }
+                });
+                
+                log(`allCollapsed operation completed`);
+            }
+        }
+        
+        // Simulate supporting functions
+        function setCollapsedIds(ids) {
+            log(`setCollapsedIds called with ${ids.length} ids: [${ids.join(', ')}]`);
+            try {
+                sessionStorage.setItem('collapsedIds', JSON.stringify(ids));
+                log('Ids saved to sessionStorage');
+            } catch (e) {
+                log(`Error saving to sessionStorage: ${e.message}`);
+            }
+        }
+        
+        function redraw() {
+            log('redraw() called');
+            // Simulate redraw functionality
+            const collapsibles = document.querySelectorAll('.collapsible');
+            log(`Redrawing ${collapsibles.length} elements`);
+        }
+        
+        // Initialize manager
+        const manager = new TestManager();
+        
+        // Add event listeners exactly like pytest-html
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM Content Loaded');
+            
+            const showBtn = document.getElementById('show_all_details');
+            const hideBtn = document.getElementById('hide_all_details');
+            
+            if (showBtn) {
+                showBtn.addEventListener('click', () => {
+                    log('Show all details button clicked');
+                    manager.allCollapsed = false;
+                    setCollapsedIds([]);
+                    redraw();
+                });
+                log('Show button event listener added');
+            } else {
+                log('ERROR: Show button not found!');
+            }
+            
+            if (hideBtn) {
+                hideBtn.addEventListener('click', () => {
+                    log('Hide all details button clicked');
+                    manager.allCollapsed = true;
+                    const allIds = manager.renderData.tests.map((test) => test.id);
+                    setCollapsedIds(allIds);
+                    redraw();
+                });
+                log('Hide button event listener added');
+            } else {
+                log('ERROR: Hide button not found!');
+            }
+            
+            // Auto test
+            setTimeout(() => {
+                log('=== STARTING AUTO TEST ===');
+                checkElements();
+                
+                setTimeout(() => {
+                    log('Auto-clicking show button...');
+                    showBtn && showBtn.click();
+                    
+                    setTimeout(() => {
+                        log('Auto-clicking hide button...');
+                        hideBtn && hideBtn.click();
+                        log('=== AUTO TEST COMPLETED ===');
+                    }, 2000);
+                }, 2000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Test Show Details Button</title>
+    <style>
+        .collapsible {
+            display: none;
+        }
+        .pytest-debug {
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .show-details-btn {
+            background: #007cba;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .show-details-btn:hover {
+            background: #005a87;
+        }
+        .test-item {
+            margin: 5px 0;
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+        .details {
+            display: none;
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="pytest-debug">
+        <h1>Test Show Details Functionality</h1>
+        
+        <button class="show-details-btn" onclick="showAllDetails()">Show all details</button>
+        <button class="show-details-btn" onclick="hideAllDetails()">Hide all details</button>
+        
+        <div class="test-item">
+            <h3>Test 1: Basic Math</h3>
+            <div class="collapsible details">
+                <p>Test function: test_add</p>
+                <p>Status: PASSED</p>
+                <p>Duration: 0.001s</p>
+                <pre>def test_add():
+    assert add(2, 3) == 5</pre>
+            </div>
+        </div>
+        
+        <div class="test-item">
+            <h3>Test 2: Division by Zero</h3>
+            <div class="collapsible details">
+                <p>Test function: test_divide_by_zero</p>
+                <p>Status: PASSED</p>
+                <p>Duration: 0.002s</p>
+                <pre>def test_divide_by_zero():
+    with pytest.raises(ValueError):
+        divide(10, 0)</pre>
+            </div>
+        </div>
+        
+        <div class="test-item">
+            <h3>Test 3: String Operations</h3>
+            <div class="collapsible details">
+                <p>Test function: test_string_concat</p>
+                <p>Status: PASSED</p>
+                <p>Duration: 0.001s</p>
+                <pre>def test_string_concat():
+    assert "hello" + " world" == "hello world"</pre>
+            </div>
+        </div>
+        
+        <div id="debug-output">
+            <h3>Debug Output:</h3>
+            <div id="debug-messages"></div>
+        </div>
+    </div>
+
+    <script>
+        function logDebug(message) {
+            const debugDiv = document.getElementById('debug-messages');
+            const timestamp = new Date().toLocaleTimeString();
+            debugDiv.innerHTML += `<p>[${timestamp}] ${message}</p>`;
+            console.log(`[DEBUG] ${message}`);
+        }
+        
+        function showAllDetails() {
+            logDebug('showAllDetails() called');
+            const elements = document.getElementsByClassName('collapsible');
+            logDebug(`Found ${elements.length} collapsible elements`);
+            
+            for (let i = 0; i < elements.length; i++) {
+                elements[i].style.display = 'block';
+                logDebug(`Showing element ${i}: ${elements[i].className}`);
+            }
+            logDebug('showAllDetails() completed');
+        }
+        
+        function hideAllDetails() {
+            logDebug('hideAllDetails() called');
+            const elements = document.getElementsByClassName('collapsible');
+            logDebug(`Found ${elements.length} collapsible elements`);
+            
+            for (let i = 0; i < elements.length; i++) {
+                elements[i].style.display = 'none';
+                logDebug(`Hiding element ${i}: ${elements[i].className}`);
+            }
+            logDebug('hideAllDetails() completed');
+        }
+        
+        // Test automatico al caricamento
+        window.addEventListener('load', function() {
+            logDebug('Page loaded');
+            logDebug(`Document ready state: ${document.readyState}`);
+            logDebug(`Number of collapsible elements: ${document.getElementsByClassName('collapsible').length}`);
+            
+            // Test automatico dopo 2 secondi
+            setTimeout(function() {
+                logDebug('Running automatic test...');
+                showAllDetails();
+                
+                setTimeout(function() {
+                    hideAllDetails();
+                    logDebug('Automatic test completed');
+                }, 2000);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
