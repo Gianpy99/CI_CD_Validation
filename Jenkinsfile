@@ -23,6 +23,16 @@ pipeline {
             }
         }
         
+        stage('Debug Environment') {
+            steps {
+                echo 'Running environment debug...'
+                sh '''
+                    chmod +x debug-jenkins.sh
+                    ./debug-jenkins.sh
+                '''
+            }
+        }
+        
         stage('Code Quality Check') {
             steps {
                 echo 'Running code quality checks...'
