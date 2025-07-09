@@ -12,51 +12,35 @@ pipeline {
                 sh '''
                     echo "🔍 Checking Python availability..."
                     
-                    # Check if Python is available (python first, then python3)
-                    if command -v python >/dev/null 2>&1; then
-                        PYTHON_CMD="python"
-                        echo "✅ Found python: $(which python)"
-                    elif command -v python3 >/dev/null 2>&1; then
+                    # Check if Python is available
+                    if command -v python3 >/dev/null 2>&1; then
                         PYTHON_CMD="python3"
                         echo "✅ Found python3: $(which python3)"
+                        $PYTHON_CMD --version
+                    elif command -v python >/dev/null 2>&1; then
+                        PYTHON_CMD="python"
+                        echo "✅ Found python: $(which python)"
+                        $PYTHON_CMD --version
                     else
-                        echo "❌ No Python found! Installing Python in container..."
-                        
-                        # Install Python without sudo (we're likely root in container)
-                        echo "🔧 Installing Python via apt-get as root..."
-                        apt-get update || echo "apt-get update failed"
-                        apt-get install -y python3 python3-pip || echo "apt-get install failed"
-                        
-                        # Set Python command
-                        if command -v python3 >/dev/null 2>&1; then
-                            PYTHON_CMD="python3"
-                            echo "✅ Python3 installed successfully"
-                        elif command -v python >/dev/null 2>&1; then
-                            PYTHON_CMD="python"
-                            echo "✅ Python installed successfully"
-                        else
-                            echo "💥 CRITICAL: Cannot install Python in container!"
-                            echo "Consider using a Jenkins image with Python pre-installed"
-                            echo "Or manually install Python in the Jenkins container"
-                            exit 1
-                        fi
+                        echo "❌ No Python found!"
+                        echo "Please install Python in the Jenkins container manually"
+                        exit 1
                     fi
                     
                     echo "🎯 Using Python command: $PYTHON_CMD"
-                    $PYTHON_CMD --version
                     
                     # Check pip
                     if $PYTHON_CMD -m pip --version >/dev/null 2>&1; then
                         echo "✅ pip available"
                     else
-                        echo "❌ pip not available, trying to install..."
-                        $PYTHON_CMD -m ensurepip --default-pip || true
+                        echo "❌ pip not available!"
+                        exit 1
                     fi
                     
-                    # Upgrade pip and install requirements
+                    # Install requirements
                     echo "📦 Installing packages..."
-                    $PYTHON_CMD -m pip install --upgrade pip || true
-                    $PYTHON_CMD -m pip install -r requirements.txt || true
+                    $PYTHON_CMD -m pip install --upgrade pip --break-system-packages || $PYTHON_CMD -m pip install --upgrade pip
+                    $PYTHON_CMD -m pip install --break-system-packages -r requirements.txt || $PYTHON_CMD -m pip install -r requirements.txt
                 '''
             }
         }
