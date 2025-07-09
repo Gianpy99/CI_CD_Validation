@@ -1,79 +1,58 @@
 import pytest
 from app import add, subtract, multiply, divide, calculate_percentage, Calculator
 
-class TestAdd:
-    """Test class for the add function"""
-    
-    def test_add_positive_numbers(self):
-        """Test addition of positive numbers"""
-        assert add(2, 3) == 5
-        assert add(10, 15) == 25
-        
-    def test_add_negative_numbers(self):
-        """Test addition of negative numbers"""
-        assert add(-1, -1) == -2
-        assert add(-5, -3) == -8
-        
-    def test_add_mixed_numbers(self):
-        """Test addition of positive and negative numbers"""
-        assert add(-1, 1) == 0
-        assert add(-3, 3) == 0
-        assert add(-3, 4) == 1
-        assert add(-3, 5) == 2
-        
-    def test_add_zero(self):
-        """Test addition with zero"""
-        assert add(0, 0) == 0
-        assert add(5, 0) == 5
-        assert add(0, -5) == -5
-        
-    def test_add_large_numbers(self):
-        """Test addition of large numbers"""
-        assert add(1000000, 2000000) == 3000000
-        assert add(-1000000, 1000000) == 0
+def test_add():
+    assert add(2, 3) == 5
+    assert add(-1, 1) == 0
+    assert add(-3, 3) == 0
+    assert add(-3, 4) == 1
+    assert add(-3, 5) == 2
 
-    @pytest.mark.parametrize("a,b,expected", [
-        (1, 2, 3),
-        (0, 0, 0),
-        (-1, 1, 0),
-        (100, -50, 50),
-        (2.5, 3.5, 6.0),
-    ])
-    def test_add_parametrized(self, a, b, expected):
-        """Parametrized test for various input combinations"""
-        assert add(a, b) == expected
+def test_subtract():
+    assert subtract(10, 5) == 5
+    assert subtract(0, 5) == -5
+    assert subtract(-5, -3) == -2
 
-class TestMultiply:
-    """Test class for the multiply function - this will catch the bug!"""
-    
-    def test_multiply_positive(self):
-        """Test multiplication of positive numbers"""
-        assert multiply(3, 4) == 12  # This will fail! (7 != 12)
-        assert multiply(5, 6) == 30  # This will fail! (11 != 30)
-        
-    def test_multiply_with_zero(self):
-        """Test multiplication with zero"""
-        assert multiply(5, 0) == 0   # This will fail! (5 != 0)
-        assert multiply(0, 10) == 0  # This will fail! (10 != 0)
-        
-    def test_multiply_negative(self):
-        """Test multiplication with negative numbers"""
-        assert multiply(-2, 3) == -6  # This will fail! (1 != -6)
-        assert multiply(-4, -5) == 20 # This will fail! (-9 != 20)
+def test_multiply():
+    assert multiply(3, 4) == 12
+    assert multiply(-2, 5) == -10
+    assert multiply(0, 100) == 0
 
-class TestAllFunctions:
-    """Integration tests for all calculator functions"""
-    
-    def test_basic_operations(self):
-        """Test basic mathematical operations"""
-        assert add(2, 3) == 5
-        assert subtract(10, 4) == 6
-        assert multiply(3, 7) == 21  # This will fail! (10 != 21)
-        assert divide(15, 3) == 5
-        
-    def test_calculator_class(self):
-        """Test Calculator class functionality"""
-        calc = Calculator()
-        calc.add_to_history("test", 42)
-        assert len(calc.get_history()) == 1
-        assert "test = 42" in calc.get_history()[0]
+def test_divide():
+    assert divide(15, 3) == 5
+    assert divide(-10, 2) == -5
+    assert round(divide(1, 3), 6) == 0.333333
+
+def test_divide_by_zero():
+    with pytest.raises(ValueError, match="Cannot divide by zero!"):
+        divide(10, 0)
+
+def test_calculate_percentage():
+    assert calculate_percentage(25, 100) == 25.0
+    assert calculate_percentage(50, 200) == 25.0
+    assert calculate_percentage(0, 100) == 0.0
+
+def test_calculate_percentage_zero_total():
+    with pytest.raises(ValueError, match="Total cannot be zero!"):
+        calculate_percentage(10, 0)
+
+def test_calculator_add_to_history():
+    calc = Calculator()
+    calc.add_to_history("2 + 3", 5)
+    assert len(calc.get_history()) == 1
+    assert calc.get_history()[0] == "2 + 3 = 5"
+
+def test_calculator_get_history():
+    calc = Calculator()
+    calc.add_to_history("5 * 4", 20)
+    calc.add_to_history("10 / 2", 5)
+    history = calc.get_history()
+    assert len(history) == 2
+    assert "5 * 4 = 20" in history
+    assert "10 / 2 = 5" in history
+
+def test_calculator_clear_history():
+    calc = Calculator()
+    calc.add_to_history("1 + 1", 2)
+    calc.clear_history()
+    assert len(calc.get_history()) == 0
