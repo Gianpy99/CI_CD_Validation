@@ -42,16 +42,20 @@ pipeline {
                     
                     # Run unittest tests first - FAIL BUILD IF THESE FAIL
                     echo "=== Running unittest tests ==="
-                    python3 -m unittest test_app.py -v | tee test-reports/unittest-output.txt
-                    UNITTEST_STATUS=${PIPESTATUS[0]}
+                    set +e  # Don't exit immediately on error
+                    python3 -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1
+                    UNITTEST_STATUS=$?
+                    cat test-reports/unittest-output.txt
                     
                     # Run pytest tests - FAIL BUILD IF THESE FAIL  
                     echo "=== Running pytest tests ==="
                     python3 -m pytest test_app_pytest.py -v \\
                         --junitxml=test-reports/pytest-results.xml \\
                         --html=test-reports/pytest-report.html --self-contained-html \\
-                        --tb=short | tee test-reports/pytest-output.txt
-                    PYTEST_STATUS=${PIPESTATUS[0]}
+                        --tb=short > test-reports/pytest-output.txt 2>&1
+                    PYTEST_STATUS=$?
+                    cat test-reports/pytest-output.txt
+                    set -e  # Re-enable exit on error
                     
                     # Generate coverage (optional, don't fail build)
                     echo "=== Generating coverage report ==="
