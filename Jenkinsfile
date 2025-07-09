@@ -6,11 +6,8 @@ pipeline {
             steps {
                 echo 'Setting up Python environment...'
                 sh '''
-                    # Use python3 if available, otherwise pyth                        <li><a href="${buildUrl}artifact/pytest-report/index.html" target="_blank">🎯 Coverage-Style Pytest Report (RECOMMENDED)</a></li>
-                        <li><a href="${buildUrl}artifact/jenkins-pytest-report.html" target="_blank">🚀 Single-File Pytest Report</a></li>
-                        <li><a href="${buildUrl}artifact/pytest-report.html" target="_blank">📋 Standard Pytest HTML Report</a></li>
-                        <li><a href="${buildUrl}artifact/coverage-html/index.html" target="_blank">📈 Coverage Report</a></li>
-                        <li><a href="${buildUrl}artifact/flake8-report.html" target="_blank">🔍 Code Quality Report</a></li>                    if command -v python3 >/dev/null 2>&1; then
+                    # Use python3 if available, otherwise python
+                    if command -v python3 >/dev/null 2>&1; then
                         PYTHON_CMD="python3"
                     elif command -v python >/dev/null 2>&1; then
                         PYTHON_CMD="python"
@@ -103,7 +100,7 @@ pipeline {
                     # Generate coverage-style report with external CSS/JS (like coverage.py)
                     $PYTHON_CMD generate_coverage_style_report.py
                     
-                    # Verify both reports were created
+                    # Verify all reports were created
                     if [ -f "pytest-report.html" ]; then
                         echo "✅ Standard pytest-report.html generated successfully"
                         ls -la pytest-report.html
@@ -246,10 +243,11 @@ pipeline {
                     def reportLinks = """
                     <h3>📊 Test Reports</h3>
                     <ul>
-                        <li><a href="${buildUrl}artifact/jenkins-pytest-report.html" target="_blank">� Jenkins Pytest Report (Interactive - RECOMMENDED)</a></li>
+                        <li><a href="${buildUrl}artifact/pytest-report/index.html" target="_blank">🎯 Coverage-Style Pytest Report (RECOMMENDED)</a></li>
+                        <li><a href="${buildUrl}artifact/jenkins-pytest-report.html" target="_blank">🚀 Single-File Pytest Report</a></li>
                         <li><a href="${buildUrl}artifact/pytest-report.html" target="_blank">📋 Standard Pytest HTML Report</a></li>
-                        <li><a href="${buildUrl}artifact/coverage-html/index.html" target="_blank">📈 Coverage Report (Direct Link)</a></li>
-                        <li><a href="${buildUrl}artifact/flake8-report.html" target="_blank">🔍 Code Quality Report (Direct Link)</a></li>
+                        <li><a href="${buildUrl}artifact/coverage-html/index.html" target="_blank">📈 Coverage Report</a></li>
+                        <li><a href="${buildUrl}artifact/flake8-report.html" target="_blank">🔍 Code Quality Report</a></li>
                     </ul>
                     """
                     currentBuild.description = reportLinks
