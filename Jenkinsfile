@@ -10,8 +10,24 @@ pipeline {
             steps {
                 echo 'Setting up Python environment...'
                 sh '''
-                    python3 -m pip install --upgrade pip
-                    python3 -m pip install -r requirements.txt
+                    # Check which Python is available
+                    if command -v python3 >/dev/null 2>&1; then
+                        PYTHON_CMD="python3"
+                    elif command -v python >/dev/null 2>&1; then
+                        PYTHON_CMD="python"
+                    else
+                        echo "❌ No Python found!"
+                        exit 1
+                    fi
+                    
+                    echo "Using Python command: $PYTHON_CMD"
+                    $PYTHON_CMD --version
+                    
+                    # Upgrade pip
+                    $PYTHON_CMD -m pip install --upgrade pip
+                    
+                    # Install requirements
+                    $PYTHON_CMD -m pip install -r requirements.txt
                 '''
             }
         }
@@ -30,7 +46,17 @@ pipeline {
             steps {
                 echo 'Running code quality checks...'
                 sh '''
-                    python3 -m flake8 app.py test_app.py --output-file=flake8-report.txt || true
+                    # Determine Python command
+                    if command -v python3 >/dev/null 2>&1; then
+                        PYTHON_CMD="python3"
+                    elif command -v python >/dev/null 2>&1; then
+                        PYTHON_CMD="python"
+                    else
+                        echo "❌ No Python found!"
+                        exit 1
+                    fi
+                    
+                    $PYTHON_CMD -m flake8 app.py test_app.py --output-file=flake8-report.txt || true
                 '''
                 archiveArtifacts artifacts: 'flake8-report.txt', allowEmptyArchive: true
             }
@@ -40,19 +66,31 @@ pipeline {
             steps {
                 echo 'Running comprehensive testing...'
                 sh '''
+                    # Determine Python command
+                    if command -v python3 >/dev/null 2>&1; then
+                        PYTHON_CMD="python3"
+                    elif command -v python >/dev/null 2>&1; then
+                        PYTHON_CMD="python"
+                    else
+                        echo "❌ No Python found!"
+                        exit 1
+                    fi
+                    
+                    echo "Using Python command: $PYTHON_CMD"
+                    
                     # Create test reports directory
                     mkdir -p test-reports
                     
                     # Run unittest tests first - FAIL BUILD IF THESE FAIL
                     echo "=== Running unittest tests ==="
                     set +e  # Don't exit immediately on error
-                    python3 -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1
+                    $PYTHON_CMD -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1
                     UNITTEST_STATUS=$?
                     cat test-reports/unittest-output.txt
                     
                     # Run pytest tests - FAIL BUILD IF THESE FAIL  
                     echo "=== Running pytest tests ==="
-                    python3 -m pytest test_app_pytest.py -v \\
+                    $PYTHON_CMD -m pytest test_app_pytest.py -v \\
                         --junitxml=test-reports/pytest-results.xml \\
                         --html=test-reports/pytest-report.html --self-contained-html \\
                         --tb=short > test-reports/pytest-output.txt 2>&1
@@ -62,10 +100,10 @@ pipeline {
                     
                     # Generate coverage (optional, don't fail build)
                     echo "=== Generating coverage report ==="
-                    python3 -m coverage run --source=. -m unittest test_app.py || true
-                    python3 -m coverage xml -o test-reports/coverage.xml || true
-                    python3 -m coverage html -d test-reports/htmlcov || true
-                    python3 -m coverage report | tee test-reports/coverage-summary.txt || true
+                    $PYTHON_CMD -m coverage run --source=. -m unittest test_app.py || true
+                    $PYTHON_CMD -m coverage xml -o test-reports/coverage.xml || true
+                    $PYTHON_CMD -m coverage html -d test-reports/htmlcov || true
+                    $PYTHON_CMD -m coverage report | tee test-reports/coverage-summary.txt || true
                     
                     # Create build summary
                     echo "=== BUILD SUMMARY ===" | tee test-reports/test-summary.txt
