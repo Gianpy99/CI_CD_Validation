@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Environment Info') {
+            steps {
+                echo 'Checking environment without Python...'
+                sh '''
+                    echo "=== CONTAINER INFO ==="
+                    whoami
+                    id
+                    pwd
+                    echo ""
+                    
+                    echo "=== FILES IN WORKSPACE ==="
+                    ls -la
+                    echo ""
+                    
+                    echo "=== CHECKING APP.PY BUG ==="
+                    if [ -f "app.py" ]; then
+                        echo "Found app.py - checking for multiply bug..."
+                        grep -n "def multiply" app.py
+                        grep -A 2 "def multiply" app.py | grep "return"
+                        
+                        # Check if multiply has the bug
+                        if grep -q "return a + b" app.py; then
+                            echo "🚨 BUG DETECTED: multiply() function returns a + b instead of a * b"
+                            echo "This would cause test failures!"
+                            
+                            # Simulate test failure
+                            echo ""
+                            echo "=== SIMULATING TEST RESULTS ==="
+                            echo "multiply(3, 4) would return: $((3 + 4)) (expected: $((3 * 4)))"
+                            echo "multiply(5, 0) would return: $((5 + 0)) (expected: $((5 * 0)))"
+                            echo "multiply(-2, 3) would return: $((-2 + 3)) (expected: $((-2 * 3)))"
+                            echo ""
+                            echo "🚨 BUILD SHOULD FAIL - BUG IN MULTIPLY FUNCTION!"
+                            echo "🛡️ Jenkins is protecting production from buggy code!"
+                            exit 1
+                        else
+                            echo "✅ multiply() function appears correct"
+                        fi
+                    else
+                        echo "❌ app.py not found"
+                        exit 1
+                    fi
+                '''
+            }
+        }
+        
+        stage('This Should Not Run') {
+            steps {
+                echo '❌ ERROR: This stage should not run if multiply bug is detected!'
+                sh 'echo "If you see this, bug detection failed!"'
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo '📋 Build completed!'
+        }
+        success {
+            echo '✅ Build SUCCESS - multiply function is correct'
+        }
+        failure {
+            echo '❌ Build FAILED - multiply function has bugs (this is correct behavior!)'
+        }
+    }
+}
