@@ -108,9 +108,9 @@ pipeline {
                     
                     # Run pytest tests - FAIL BUILD IF THESE FAIL  
                     echo "=== Running pytest tests ==="
-                    $PYTHON_CMD -m pytest test_app_pytest.py -v \\
-                        --junitxml=test-reports/pytest-results.xml \\
-                        --html=test-reports/pytest-report.html --self-contained-html \\
+                    $PYTHON_CMD -m pytest -v \
+                        --junitxml=test-reports/pytest-results.xml \
+                        --html=test-reports/pytest-report.html --self-contained-html \
                         --tb=short > test-reports/pytest-output.txt 2>&1
                     PYTEST_STATUS=$?
                     cat test-reports/pytest-output.txt
