@@ -55,10 +55,10 @@ Write-Host "   • Fixed in 5 minutes ✅" -ForegroundColor Green
 Write-Host "   • Automatic deployment ✅" -ForegroundColor Green
 Write-Host "   • Total cost: $0 ✅" -ForegroundColor Green
 
-Write-Host "`n💰 JENKINS VALUE:" -ForegroundColor Cyan
+Write-Host "💰 JENKINS VALUE:" -ForegroundColor Cyan
 Write-Host "   • Prevented $70,000 incident" -ForegroundColor White
 Write-Host "   • Saved 85 minutes of downtime" -ForegroundColor White
 Write-Host "   • Protected 10,000 users from bugs" -ForegroundColor White
 Write-Host "   • Maintained company reputation" -ForegroundColor White
 
-Write-Host "`n🏆 This is why every professional software team uses CI/CD!" -ForegroundColor Green
+Write-Host "🏆 This is why every professional software team uses CI/CD!" -ForegroundColor Green

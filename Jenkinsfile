@@ -36,55 +36,77 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running comprehensive testing...'
-                sh '''
-                    # Create test reports directory
-                    mkdir -p test-reports
-                    
-                    # Run unittest tests first
-                    echo "=== Running unittest tests ==="
-                    python3 -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1 || echo "UNITTEST_FAILED=true" > test-reports/unittest-status.txt
-                    
-                    # Run pytest tests with detailed output
-                    echo "=== Running pytest tests ==="
-                    python3 -m pytest test_app_pytest.py -v \\
-                        --junitxml=test-reports/pytest-results.xml \\
-                        --html=test-reports/pytest-report.html --self-contained-html \\
-                        --tb=short > test-reports/pytest-output.txt 2>&1 || echo "PYTEST_FAILED=true" > test-reports/pytest-status.txt
-                    
-                    # Generate coverage if available
-                    echo "=== Generating coverage report ==="
-                    python3 -m coverage run --source=. -m unittest test_app.py || true
-                    python3 -m coverage xml -o test-reports/coverage.xml || true
-                    python3 -m coverage html -d test-reports/htmlcov || true
-                    python3 -m coverage report > test-reports/coverage-summary.txt || true
-                    
-                    # Create consolidated test summary
-                    echo "=== Test Summary ===" > test-reports/test-summary.txt
-                    echo "Build Number: ${BUILD_NUMBER}" >> test-reports/test-summary.txt
-                    echo "Timestamp: $(date)" >> test-reports/test-summary.txt
-                    echo "Branch: ${GIT_BRANCH}" >> test-reports/test-summary.txt
-                    echo "" >> test-reports/test-summary.txt
-                    
-                    if [ -f test-reports/unittest-status.txt ]; then
-                        echo "❌ UNITTEST: FAILED" >> test-reports/test-summary.txt
-                    else
-                        echo "✅ UNITTEST: PASSED" >> test-reports/test-summary.txt
-                    fi
-                    
-                    if [ -f test-reports/pytest-status.txt ]; then
-                        echo "❌ PYTEST: FAILED" >> test-reports/test-summary.txt
-                    else
-                        echo "✅ PYTEST: PASSED" >> test-reports/test-summary.txt
-                    fi
-                    
-                    echo "" >> test-reports/test-summary.txt
-                    echo "=== Coverage Summary ===" >> test-reports/test-summary.txt
-                    cat test-reports/coverage-summary.txt >> test-reports/test-summary.txt || echo "Coverage not available" >> test-reports/test-summary.txt
-                    
-                    # Display summary in console
-                    echo "📋 BUILD SUMMARY 📋"
-                    cat test-reports/test-summary.txt
-                '''
+                script {
+                    sh '''
+                        # Create test reports directory
+                        mkdir -p test-reports
+                        
+                        # Initialize status tracking
+                        OVERALL_STATUS=0
+                        
+                        # Run unittest tests first
+                        echo "=== Running unittest tests ==="
+                        python3 -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1
+                        UNITTEST_STATUS=$?
+                        if [ $UNITTEST_STATUS -ne 0 ]; then
+                            echo "❌ UNITTEST FAILED!" > test-reports/unittest-status.txt
+                            OVERALL_STATUS=1
+                        else
+                            echo "✅ UNITTEST PASSED!" > test-reports/unittest-status.txt
+                        fi
+                        
+                        # Run pytest tests with detailed output
+                        echo "=== Running pytest tests ==="
+                        python3 -m pytest test_app_pytest.py -v \\
+                            --junitxml=test-reports/pytest-results.xml \\
+                            --html=test-reports/pytest-report.html --self-contained-html \\
+                            --tb=short > test-reports/pytest-output.txt 2>&1
+                        PYTEST_STATUS=$?
+                        if [ $PYTEST_STATUS -ne 0 ]; then
+                            echo "❌ PYTEST FAILED!" > test-reports/pytest-status.txt
+                            OVERALL_STATUS=1
+                        else
+                            echo "✅ PYTEST PASSED!" > test-reports/pytest-status.txt
+                        fi
+                        
+                        # Generate coverage (don't fail build on coverage issues)
+                        echo "=== Generating coverage report ==="
+                        python3 -m coverage run --source=. -m unittest test_app.py || true
+                        python3 -m coverage xml -o test-reports/coverage.xml || true
+                        python3 -m coverage html -d test-reports/htmlcov || true
+                        python3 -m coverage report > test-reports/coverage-summary.txt || true
+                        
+                        # Create consolidated test summary
+                        echo "=== Test Summary ===" > test-reports/test-summary.txt
+                        echo "Build Number: ${BUILD_NUMBER}" >> test-reports/test-summary.txt
+                        echo "Timestamp: $(date)" >> test-reports/test-summary.txt
+                        echo "Branch: ${GIT_BRANCH}" >> test-reports/test-summary.txt
+                        echo "" >> test-reports/test-summary.txt
+                        
+                        cat test-reports/unittest-status.txt >> test-reports/test-summary.txt
+                        cat test-reports/pytest-status.txt >> test-reports/test-summary.txt
+                        
+                        echo "" >> test-reports/test-summary.txt
+                        echo "=== Coverage Summary ===" >> test-reports/test-summary.txt
+                        cat test-reports/coverage-summary.txt >> test-reports/test-summary.txt || echo "Coverage not available" >> test-reports/test-summary.txt
+                        
+                        # Display summary in console
+                        echo "📋 BUILD SUMMARY 📋"
+                        cat test-reports/test-summary.txt
+                        
+                        # CRITICAL: Fail the build if tests failed
+                        if [ $OVERALL_STATUS -ne 0 ]; then
+                            echo ""
+                            echo "🚨 CRITICAL: TESTS FAILED! BUILD MUST FAIL! 🚨"
+                            echo "🛡️  This protects production from buggy code"
+                            echo "🔧 Fix the failing tests and commit again"
+                            exit 1
+                        fi
+                        
+                        echo ""
+                        echo "✅ All tests passed! Build can proceed safely"
+                    '''
+                }
             }
             post {
                 always {
@@ -115,18 +137,6 @@ pipeline {
                     
                     // Archivia tutti i report
                     archiveArtifacts artifacts: 'test-reports/**/*', allowEmptyArchive: true, fingerprint: true
-                    
-                    // Analizza i risultati per determinare lo stato
-                    script {
-                        def testSummary = readFile('test-reports/test-summary.txt')
-                        echo "📊 FINAL TEST SUMMARY:"
-                        echo testSummary
-                        
-                        if (testSummary.contains('FAILED')) {
-                            currentBuild.result = 'UNSTABLE'
-                            echo "⚠️ Some tests failed - marking build as UNSTABLE"
-                        }
-                    }
                 }
             }
         }
