@@ -7,6 +7,7 @@ class TestAdd(unittest.TestCase):
         self.assertEqual(add(-1, 1), 0)
         self.assertEqual(add(-3, 3), 0)
         self.assertEqual(add(-3, 4), 1)
+        self.assertEqual(add(-3, 5), 2)
 
 if __name__ == "__main__":
     unittest.main()
