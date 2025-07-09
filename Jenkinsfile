@@ -35,41 +35,98 @@ pipeline {
         
         stage('Test') {
             steps {
-                echo 'Running tests with coverage...'
+                echo 'Running comprehensive testing...'
                 sh '''
-                    # Run unittest tests with coverage
-                    python3 -m coverage run -m unittest test_app.py
+                    # Create test reports directory
+                    mkdir -p test-reports
                     
-                    # Run pytest tests for additional coverage
-                    python3 -m pytest test_app_pytest.py -v \
-                        --cov=app \
-                        --cov-append \
-                        --cov-report=xml:coverage.xml \
-                        --cov-report=html:htmlcov \
-                        --junitxml=test-results.xml || true
-                        
-                    # Generate final coverage report
-                    python3 -m coverage report
-                    python3 -m coverage html
+                    # Run unittest tests first
+                    echo "=== Running unittest tests ==="
+                    python3 -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1 || echo "UNITTEST_FAILED=true" > test-reports/unittest-status.txt
+                    
+                    # Run pytest tests with detailed output
+                    echo "=== Running pytest tests ==="
+                    python3 -m pytest test_app_pytest.py -v \\
+                        --junitxml=test-reports/pytest-results.xml \\
+                        --html=test-reports/pytest-report.html --self-contained-html \\
+                        --tb=short > test-reports/pytest-output.txt 2>&1 || echo "PYTEST_FAILED=true" > test-reports/pytest-status.txt
+                    
+                    # Generate coverage if available
+                    echo "=== Generating coverage report ==="
+                    python3 -m coverage run --source=. -m unittest test_app.py || true
+                    python3 -m coverage xml -o test-reports/coverage.xml || true
+                    python3 -m coverage html -d test-reports/htmlcov || true
+                    python3 -m coverage report > test-reports/coverage-summary.txt || true
+                    
+                    # Create consolidated test summary
+                    echo "=== Test Summary ===" > test-reports/test-summary.txt
+                    echo "Build Number: ${BUILD_NUMBER}" >> test-reports/test-summary.txt
+                    echo "Timestamp: $(date)" >> test-reports/test-summary.txt
+                    echo "Branch: ${GIT_BRANCH}" >> test-reports/test-summary.txt
+                    echo "" >> test-reports/test-summary.txt
+                    
+                    if [ -f test-reports/unittest-status.txt ]; then
+                        echo "❌ UNITTEST: FAILED" >> test-reports/test-summary.txt
+                    else
+                        echo "✅ UNITTEST: PASSED" >> test-reports/test-summary.txt
+                    fi
+                    
+                    if [ -f test-reports/pytest-status.txt ]; then
+                        echo "❌ PYTEST: FAILED" >> test-reports/test-summary.txt
+                    else
+                        echo "✅ PYTEST: PASSED" >> test-reports/test-summary.txt
+                    fi
+                    
+                    echo "" >> test-reports/test-summary.txt
+                    echo "=== Coverage Summary ===" >> test-reports/test-summary.txt
+                    cat test-reports/coverage-summary.txt >> test-reports/test-summary.txt || echo "Coverage not available" >> test-reports/test-summary.txt
+                    
+                    # Display summary in console
+                    echo "📋 BUILD SUMMARY 📋"
+                    cat test-reports/test-summary.txt
                 '''
             }
             post {
                 always {
-                    // Pubblica i risultati dei test
-                    junit 'test-results.xml'
+                    // Pubblica risultati dei test JUnit
+                    junit testResults: 'test-reports/pytest-results.xml', allowEmptyResults: true
                     
-                    // Archivia i report di coverage
+                    // Pubblica report HTML dei test
                     publishHTML([
-                        allowMissing: false,
+                        allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'htmlcov',
-                        reportFiles: 'index.html',
-                        reportName: 'Coverage Report'
+                        reportDir: 'test-reports',
+                        reportFiles: 'pytest-report.html',
+                        reportName: 'Pytest Report',
+                        reportTitles: 'Test Results'
                     ])
                     
-                    // Archivia gli artefatti
-                    archiveArtifacts artifacts: 'coverage.xml,test-results.xml', allowEmptyArchive: true
+                    // Pubblica report di coverage
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'test-reports/htmlcov',
+                        reportFiles: 'index.html',
+                        reportName: 'Coverage Report',
+                        reportTitles: 'Code Coverage'
+                    ])
+                    
+                    // Archivia tutti i report
+                    archiveArtifacts artifacts: 'test-reports/**/*', allowEmptyArchive: true, fingerprint: true
+                    
+                    // Analizza i risultati per determinare lo stato
+                    script {
+                        def testSummary = readFile('test-reports/test-summary.txt')
+                        echo "📊 FINAL TEST SUMMARY:"
+                        echo testSummary
+                        
+                        if (testSummary.contains('FAILED')) {
+                            currentBuild.result = 'UNSTABLE'
+                            echo "⚠️ Some tests failed - marking build as UNSTABLE"
+                        }
+                    }
                 }
             }
         }
@@ -106,19 +163,58 @@ pipeline {
     
     post {
         always {
-            echo 'Pipeline completed!'
+            echo '📋 Pipeline completed!'
+            script {
+                // Stampa un summary finale molto chiaro
+                echo """
+                =====================================
+                🚀 JENKINS BUILD SUMMARY
+                =====================================
+                Build: #${BUILD_NUMBER}
+                Status: ${currentBuild.result ?: 'SUCCESS'}
+                Duration: ${currentBuild.durationString}
+                Workspace: ${WORKSPACE}
+                =====================================
+                📊 REPORTS AVAILABLE:
+                • Test Results (JUnit): Check 'Test Results' tab
+                • Pytest Report: Check 'Pytest Report' link  
+                • Coverage Report: Check 'Coverage Report' link
+                • Build Artifacts: Check 'Build Artifacts' section
+                =====================================
+                """
+            }
             cleanWs()
         }
         success {
-            echo 'Pipeline succeeded! '
-            // Qui potresti aggiungere notifiche (email, Slack, etc.)
+            echo '✅ Pipeline succeeded! 🎉'
+            script {
+                echo """
+                🎉 BUILD SUCCESSFUL! 
+                All tests passed. Ready for deployment.
+                Check the reports above for detailed metrics.
+                """
+            }
         }
         failure {
-            echo 'Pipeline failed! '
-            // Qui potresti aggiungere notifiche di errore
+            echo '❌ Pipeline failed! 💥'
+            script {
+                echo """
+                💥 BUILD FAILED!
+                Check the console output and test reports for details.
+                Fix the issues and try again.
+                """
+            }
         }
         unstable {
-            echo 'Pipeline unstable! '
+            echo '⚠️ Pipeline unstable! Some tests failed.'
+            script {
+                echo """
+                ⚠️ BUILD UNSTABLE!
+                Some tests failed but build artifacts were created.
+                Check test reports to see which tests failed.
+                Review the 'Test Results' and 'Pytest Report' for details.
+                """
+            }
         }
     }
 }

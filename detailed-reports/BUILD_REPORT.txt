@@ -1,0 +1,136 @@
+﻿===============================================
+DETAILED BUILD REPORT
+===============================================
+Generated: 07/09/2025 11:20:27
+Project: CI_CD_Validation
+Branch: local
+Commit: local-dev
+===============================================
+UNITTEST RESULTS
+===============================================UNITTEST: SOME TESTS FAILED
+
+Detailed unittest output:
+test_add_to_history (test_app.TestCalculator)
+Test adding operations to history ... ok
+test_clear_history (test_app.TestCalculator)
+Test clearing calculation history ... ok
+test_get_history (test_app.TestCalculator)
+Test getting calculation history ... ok
+test_add (test_app.TestMathFunctions)
+Test addition function ... ok
+test_calculate_percentage (test_app.TestMathFunctions)
+Test percentage calculation ... ok
+test_calculate_percentage_zero_total (test_app.TestMathFunctions)
+Test percentage calculation with zero total ... ok
+test_divide (test_app.TestMathFunctions)
+Test division function ... ok
+test_divide_by_zero (test_app.TestMathFunctions)
+Test division by zero raises exception ... ok
+test_multiply (test_app.TestMathFunctions)
+Test multiplication function ... FAIL
+test_subtract (test_app.TestMathFunctions)
+Test subtraction function ... ok
+System.Management.Automation.RemoteException
+======================================================================
+FAIL: test_multiply (test_app.TestMathFunctions)
+Test multiplication function
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Development\CI_CD_Validation\test_app.py", line 23, in test_multiply
+    self.assertEqual(multiply(3, 4), 12)
+AssertionError: 7 != 12
+System.Management.Automation.RemoteException
+----------------------------------------------------------------------
+Ran 10 tests in 0.001s
+System.Management.Automation.RemoteException
+FAILED (failures=1)
+
+===============================================
+PYTEST RESULTS
+===============================================PYTEST: SOME TESTS FAILED
+
+Detailed pytest output:
+[1m============================= test session starts =============================[0m
+platform win32 -- Python 3.8.8, pytest-8.3.5, pluggy-1.5.0 -- C:\Users\gianp\anaconda3\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.8.8', 'Platform': 'Windows-10-10.0.19041-SP0', 'Packages': {'pytest': '8.3.5', 'pluggy': '1.5.0'}, 'Plugins': {'anyio': '2.2.0', 'cov': '5.0.0', 'html': '4.1.1', 'metadata': '3.1.1'}, 'JAVA_HOME': 'C:\\Program Files\\Java\\jdk-21'}
+rootdir: C:\Development\CI_CD_Validation
+configfile: setup.cfg
+plugins: anyio-2.2.0, cov-5.0.0, html-4.1.1, metadata-3.1.1
+[1mcollecting ... [0mcollected 15 items
+
+test_app_pytest.py::TestAdd::test_add_positive_numbers [32mPASSED[0m[33m            [  6%][0m
+test_app_pytest.py::TestAdd::test_add_negative_numbers [32mPASSED[0m[33m            [ 13%][0m
+test_app_pytest.py::TestAdd::test_add_mixed_numbers [32mPASSED[0m[33m               [ 20%][0m
+test_app_pytest.py::TestAdd::test_add_zero [32mPASSED[0m[33m                        [ 26%][0m
+test_app_pytest.py::TestAdd::test_add_large_numbers [32mPASSED[0m[33m               [ 33%][0m
+test_app_pytest.py::TestAdd::test_add_parametrized[1-2-3] [32mPASSED[0m[33m         [ 40%][0m
+test_app_pytest.py::TestAdd::test_add_parametrized[0-0-0] [32mPASSED[0m[33m         [ 46%][0m
+test_app_pytest.py::TestAdd::test_add_parametrized[-1-1-0] [32mPASSED[0m[33m        [ 53%][0m
+test_app_pytest.py::TestAdd::test_add_parametrized[100--50-50] [32mPASSED[0m[33m    [ 60%][0m
+test_app_pytest.py::TestAdd::test_add_parametrized[2.5-3.5-6.0] [32mPASSED[0m[33m   [ 66%][0m
+test_app_pytest.py::TestMultiply::test_multiply_positive [31mFAILED[0m[31m          [ 73%][0m
+test_app_pytest.py::TestMultiply::test_multiply_with_zero [31mFAILED[0m[31m         [ 80%][0m
+test_app_pytest.py::TestMultiply::test_multiply_negative [31mFAILED[0m[31m          [ 86%][0m
+test_app_pytest.py::TestAllFunctions::test_basic_operations [31mFAILED[0m[31m       [ 93%][0m
+test_app_pytest.py::TestAllFunctions::test_calculator_class [32mPASSED[0m[31m       [100%][0m
+
+================================== FAILURES ===================================
+[31m[1m_____________________ TestMultiply.test_multiply_positive _____________________[0m
+[1m[31mtest_app_pytest.py[0m:51: in test_multiply_positive
+    [0m[94massert[39;49;00m multiply([94m3[39;49;00m, [94m4[39;49;00m) == [94m12[39;49;00m  [90m# This will fail! (7 != 12)[39;49;00m[90m[39;49;00m
+[1m[31mE   assert 7 == 12[0m
+[1m[31mE    +  where 7 = multiply(3, 4)[0m
+[31m[1m____________________ TestMultiply.test_multiply_with_zero _____________________[0m
+[1m[31mtest_app_pytest.py[0m:56: in test_multiply_with_zero
+    [0m[94massert[39;49;00m multiply([94m5[39;49;00m, [94m0[39;49;00m) == [94m0[39;49;00m   [90m# This will fail! (5 != 0)[39;49;00m[90m[39;49;00m
+[1m[31mE   assert 5 == 0[0m
+[1m[31mE    +  where 5 = multiply(5, 0)[0m
+[31m[1m_____________________ TestMultiply.test_multiply_negative _____________________[0m
+[1m[31mtest_app_pytest.py[0m:61: in test_multiply_negative
+    [0m[94massert[39;49;00m multiply(-[94m2[39;49;00m, [94m3[39;49;00m) == -[94m6[39;49;00m  [90m# This will fail! (1 != -6)[39;49;00m[90m[39;49;00m
+[1m[31mE   assert 1 == -6[0m
+[1m[31mE    +  where 1 = multiply(-2, 3)[0m
+[31m[1m___________________ TestAllFunctions.test_basic_operations ____________________[0m
+[1m[31mtest_app_pytest.py[0m:71: in test_basic_operations
+    [0m[94massert[39;49;00m multiply([94m3[39;49;00m, [94m7[39;49;00m) == [94m21[39;49;00m  [90m# This will fail! (10 != 21)[39;49;00m[90m[39;49;00m
+[1m[31mE   assert 10 == 21[0m
+[1m[31mE    +  where 10 = multiply(3, 7)[0m
+- generated xml file: C:\Development\CI_CD_Validation\detailed-reports\pytest-results.xml -
+- Generated html report: file:///C:/Development/CI_CD_Validation/detailed-reports/pytest-report.html -
+[36m[1m=========================== short test summary info ===========================[0m
+[31mFAILED[0m test_app_pytest.py::[1mTestMultiply::test_multiply_positive[0m - assert 7 == 12
+ +  where 7 = multiply(3, 4)
+[31mFAILED[0m test_app_pytest.py::[1mTestMultiply::test_multiply_with_zero[0m - assert 5 == 0
+ +  where 5 = multiply(5, 0)
+[31mFAILED[0m test_app_pytest.py::[1mTestMultiply::test_multiply_negative[0m - assert 1 == -6
+ +  where 1 = multiply(-2, 3)
+[31mFAILED[0m test_app_pytest.py::[1mTestAllFunctions::test_basic_operations[0m - assert 10 == 21
+ +  where 10 = multiply(3, 7)
+[31m=================== [31m[1m4 failed[0m, [32m11 passed[0m, [33m1 warning[0m[31m in 0.20s[0m[31m ===================[0m
+
+===============================================
+CODE COVERAGE ANALYSIS
+===============================================Name     Stmts   Miss  Cover
+----------------------------
+app.py      23      0   100%
+----------------------------
+TOTAL       23      0   100%
+
+===============================================
+CODE QUALITY ANALYSIS
+===============================================
+===============================================
+OVERALL BUILD SUMMARY
+===============================================Overall Status: FAILED
+Unittest: FAILED
+Pytest: FAILED
+Code Quality: 
+
+Generated Files:
+  â€¢ BUILD_REPORT.txt - This comprehensive report
+  â€¢ pytest-report.html - Interactive HTML test report
+  â€¢ pytest-results.xml - JUnit XML for CI systems
+  â€¢ htmlcov/index.html - Interactive coverage report
+  â€¢ coverage.xml - Coverage XML for CI systems
+  â€¢ flake8-report.txt - Code quality analysis
