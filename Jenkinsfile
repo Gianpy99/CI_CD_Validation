@@ -100,6 +100,10 @@ pipeline {
                     # Generate coverage-style report with external CSS/JS (like coverage.py)
                     $PYTHON_CMD generate_coverage_style_report.py
                     
+                    echo "📋 Generating reports dashboard..."
+                    # Generate a dashboard page with links to all reports
+                    $PYTHON_CMD generate_reports_dashboard.py
+                    
                     # Verify all reports were created
                     if [ -f "pytest-report.html" ]; then
                         echo "✅ Standard pytest-report.html generated successfully"
@@ -120,6 +124,13 @@ pipeline {
                         ls -la pytest-report/
                     else
                         echo "❌ Coverage-style pytest report was not generated!"
+                    fi
+                    
+                    if [ -f "reports-dashboard.html" ]; then
+                        echo "✅ Reports dashboard generated successfully"
+                        ls -la reports-dashboard.html
+                    else
+                        echo "❌ Reports dashboard was not generated!"
                     fi
                     
                     echo "📊 Running coverage analysis..."
@@ -143,6 +154,22 @@ pipeline {
                 echo 'Publishing HTML reports...'
                 
                 script {
+                    try {
+                        // Publish Reports Dashboard (MAIN ENTRY POINT)
+                        publishHTML([
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: '.',
+                            reportFiles: 'reports-dashboard.html',
+                            reportName: 'Reports Dashboard',
+                            reportTitles: 'All Test Reports'
+                        ])
+                        echo "✅ Reports dashboard published successfully"
+                    } catch (Exception e) {
+                        echo "❌ Failed to publish reports dashboard: ${e.getMessage()}"
+                    }
+                    
                     try {
                         // Publish Coverage-style Pytest report (PRIMARY - RECOMMENDED)
                         publishHTML([
@@ -234,24 +261,25 @@ pipeline {
             echo 'Pipeline finished. Archiving all reports...'
             
             // Archive artifacts as fallback
-            archiveArtifacts artifacts: '**/pytest-report.html, **/jenkins-pytest-report.html, **/pytest-report/*, **/coverage-html/*, **/flake8-report.*', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/pytest-report.html, **/jenkins-pytest-report.html, **/pytest-report/*, **/coverage-html/*, **/flake8-report.*, **/reports-dashboard.html', allowEmptyArchive: true
             
             // Create direct links to reports in build description
             script {
                 try {
                     def buildUrl = env.BUILD_URL
-                    def reportLinks = """
-                    <h3>📊 Test Reports</h3>
-                    <ul>
-                        <li><a href="${buildUrl}artifact/pytest-report/index.html" target="_blank">🎯 Coverage-Style Pytest Report (RECOMMENDED)</a></li>
-                        <li><a href="${buildUrl}artifact/jenkins-pytest-report.html" target="_blank">🚀 Single-File Pytest Report</a></li>
-                        <li><a href="${buildUrl}artifact/pytest-report.html" target="_blank">📋 Standard Pytest HTML Report</a></li>
-                        <li><a href="${buildUrl}artifact/coverage-html/index.html" target="_blank">📈 Coverage Report</a></li>
-                        <li><a href="${buildUrl}artifact/flake8-report.html" target="_blank">🔍 Code Quality Report</a></li>
-                    </ul>
-                    """
-                    currentBuild.description = reportLinks
-                    echo "✅ Build description updated with direct report links"
+                    
+                    // Simple text description that will definitely work
+                    def plainTextLinks = """� Test Reports Dashboard: ${buildUrl}artifact/reports-dashboard.html
+
+Quick Links:
+• Coverage-Style Pytest Report: ${buildUrl}artifact/pytest-report/index.html
+• Single-File Pytest Report: ${buildUrl}artifact/jenkins-pytest-report.html
+• Standard Pytest Report: ${buildUrl}artifact/pytest-report.html
+• Coverage Report: ${buildUrl}artifact/coverage-html/index.html
+• Code Quality Report: ${buildUrl}artifact/flake8-report.html"""
+                    
+                    currentBuild.description = plainTextLinks
+                    echo "✅ Build description updated with report links"
                 } catch (Exception e) {
                     echo "⚠️ Could not update build description: ${e.getMessage()}"
                 }

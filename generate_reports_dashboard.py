@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+"""
+Generate a simple HTML page with report links for Jenkins.
+This creates a standalone page that can be archived as an artifact
+and provides easy access to all reports.
+"""
+
+import os
+from datetime import datetime
+
+
+def generate_reports_index():
+    """Generate an index page with links to all reports."""
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Reports Dashboard</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        .container {{
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 40px;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 40px;
+        }}
+        h1 {{
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }}
+        .subtitle {{
+            color: #666;
+            font-size: 1.1rem;
+        }}
+        .reports-grid {{
+            display: grid;
+            gap: 20px;
+            margin-top: 30px;
+        }}
+        .report-card {{
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #007bff;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }}
+        .report-card:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            text-decoration: none;
+            color: inherit;
+        }}
+        .report-card.primary {{
+            border-left-color: #28a745;
+            background: linear-gradient(45deg, #d4edda, #f8f9fa);
+        }}
+        .report-card.secondary {{
+            border-left-color: #17a2b8;
+        }}
+        .report-card.warning {{
+            border-left-color: #ffc107;
+        }}
+        .report-title {{
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }}
+        .report-emoji {{
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }}
+        .report-description {{
+            color: #666;
+            margin-bottom: 10px;
+        }}
+        .report-badge {{
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }}
+        .report-badge.recommended {{
+            background: #28a745;
+        }}
+        .report-badge.fallback {{
+            background: #6c757d;
+        }}
+        .footer {{
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Test Reports Dashboard</h1>
+            <div class="subtitle">Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+        </div>
+        
+        <div class="reports-grid">
+            <a href="pytest-report/index.html" class="report-card primary">
+                <div class="report-title">
+                    <span class="report-emoji">🎯</span>
+                    Coverage-Style Pytest Report
+                    <span class="report-badge recommended">RECOMMENDED</span>
+                </div>
+                <div class="report-description">
+                    Interactive test results with external CSS/JS, designed for maximum Jenkins compatibility.
+                    Includes filtering, test details, and modern UI.
+                </div>
+            </a>
+            
+            <a href="jenkins-pytest-report.html" class="report-card secondary">
+                <div class="report-title">
+                    <span class="report-emoji">🚀</span>
+                    Single-File Pytest Report
+                    <span class="report-badge">ALTERNATIVE</span>
+                </div>
+                <div class="report-description">
+                    Self-contained HTML report with inline CSS/JS. Fallback option if external files are blocked.
+                </div>
+            </a>
+            
+            <a href="pytest-report.html" class="report-card">
+                <div class="report-title">
+                    <span class="report-emoji">📋</span>
+                    Standard Pytest HTML Report
+                    <span class="report-badge fallback">FALLBACK</span>
+                </div>
+                <div class="report-description">
+                    Default pytest-html generated report. May have limited interactivity in Jenkins.
+                </div>
+            </a>
+            
+            <a href="coverage-html/index.html" class="report-card">
+                <div class="report-title">
+                    <span class="report-emoji">📈</span>
+                    Coverage Report
+                </div>
+                <div class="report-description">
+                    Code coverage analysis showing which lines of code are tested.
+                </div>
+            </a>
+            
+            <a href="flake8-report.html" class="report-card warning">
+                <div class="report-title">
+                    <span class="report-emoji">🔍</span>
+                    Code Quality Report
+                </div>
+                <div class="report-description">
+                    Static code analysis results from flake8, highlighting code quality issues.
+                </div>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>💡 Click on any report above to view detailed results</p>
+            <p>Generated by Jenkins CI/CD Pipeline</p>
+        </div>
+    </div>
+</body>
+</html>"""
+    
+    try:
+        with open("reports-dashboard.html", "w", encoding="utf-8") as f:
+            f.write(html_content)
+        print("✅ Reports dashboard generated: reports-dashboard.html")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to generate reports dashboard: {e}")
+        return False
+
+
+if __name__ == "__main__":
+    generate_reports_index()
