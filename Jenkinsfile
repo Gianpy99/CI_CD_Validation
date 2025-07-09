@@ -6,13 +6,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                echo 'Cloning repository...'
-                git 'https://github.com/Gianpy99/CI_CD_Validation.git'
-            }
-        }
-        
         stage('Setup Environment') {
             steps {
                 echo 'Setting up Python environment...'
@@ -205,7 +198,7 @@ pipeline {
                 =====================================
                 """
             }
-            cleanWs()
+            // cleanWs() non disponibile in questa installazione Jenkins
         }
         success {
             echo '✅ Pipeline succeeded! 🎉'
