@@ -8,7 +8,7 @@ def subtract(a, b):
 
 def multiply(a, b):
     """Multiply two numbers"""
-    return a + b # Note: This is a bug in the original code, it should be `return a * b` instead of `return a + b`
+    return a * b 
 
 def divide(a, b):
     """Divide a by b"""
