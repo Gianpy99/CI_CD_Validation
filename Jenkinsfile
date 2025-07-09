@@ -6,8 +6,11 @@ pipeline {
             steps {
                 echo 'Setting up Python environment...'
                 sh '''
-                    # Use python3 if available, otherwise python
-                    if command -v python3 >/dev/null 2>&1; then
+                    # Use python3 if available, otherwise pyth                        <li><a href="${buildUrl}artifact/pytest-report/index.html" target="_blank">🎯 Coverage-Style Pytest Report (RECOMMENDED)</a></li>
+                        <li><a href="${buildUrl}artifact/jenkins-pytest-report.html" target="_blank">🚀 Single-File Pytest Report</a></li>
+                        <li><a href="${buildUrl}artifact/pytest-report.html" target="_blank">📋 Standard Pytest HTML Report</a></li>
+                        <li><a href="${buildUrl}artifact/coverage-html/index.html" target="_blank">📈 Coverage Report</a></li>
+                        <li><a href="${buildUrl}artifact/flake8-report.html" target="_blank">🔍 Code Quality Report</a></li>                    if command -v python3 >/dev/null 2>&1; then
                         PYTHON_CMD="python3"
                     elif command -v python >/dev/null 2>&1; then
                         PYTHON_CMD="python"
@@ -96,6 +99,10 @@ pipeline {
                     # Generate Jenkins-compatible report that bypasses CSP issues
                     $PYTHON_CMD generate_jenkins_report.py
                     
+                    echo "📊 Generating Coverage-style pytest report..."
+                    # Generate coverage-style report with external CSS/JS (like coverage.py)
+                    $PYTHON_CMD generate_coverage_style_report.py
+                    
                     # Verify both reports were created
                     if [ -f "pytest-report.html" ]; then
                         echo "✅ Standard pytest-report.html generated successfully"
@@ -109,6 +116,13 @@ pipeline {
                         ls -la jenkins-pytest-report.html
                     else
                         echo "❌ Jenkins-compatible report was not generated!"
+                    fi
+                    
+                    if [ -d "pytest-report" ] && [ -f "pytest-report/index.html" ]; then
+                        echo "✅ Coverage-style pytest report generated successfully"
+                        ls -la pytest-report/
+                    else
+                        echo "❌ Coverage-style pytest report was not generated!"
                     fi
                     
                     echo "📊 Running coverage analysis..."
@@ -133,15 +147,31 @@ pipeline {
                 
                 script {
                     try {
-                        // Publish Jenkins-compatible Pytest report (primary)
+                        // Publish Coverage-style Pytest report (PRIMARY - RECOMMENDED)
+                        publishHTML([
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'pytest-report',
+                            reportFiles: 'index.html',
+                            reportName: 'Pytest Report (Coverage-Style)',
+                            reportTitles: 'Coverage-Style Test Results'
+                        ])
+                        echo "✅ Coverage-style pytest report published successfully"
+                    } catch (Exception e) {
+                        echo "❌ Failed to publish coverage-style pytest report: ${e.getMessage()}"
+                    }
+                    
+                    try {
+                        // Publish Jenkins-compatible Pytest report (backup)
                         publishHTML([
                             allowMissing: false,
                             alwaysLinkToLastBuild: true,
                             keepAll: true,
                             reportDir: '.',
                             reportFiles: 'jenkins-pytest-report.html',
-                            reportName: 'Jenkins Pytest Report (Interactive)',
-                            reportTitles: 'Interactive Test Results'
+                            reportName: 'Jenkins Pytest Report (Single File)',
+                            reportTitles: 'Single File Test Results'
                         ])
                         echo "✅ Jenkins-compatible pytest report published successfully"
                     } catch (Exception e) {
@@ -207,7 +237,7 @@ pipeline {
             echo 'Pipeline finished. Archiving all reports...'
             
             // Archive artifacts as fallback
-            archiveArtifacts artifacts: '**/pytest-report.html, **/jenkins-pytest-report.html, **/coverage-html/*, **/flake8-report.*', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/pytest-report.html, **/jenkins-pytest-report.html, **/pytest-report/*, **/coverage-html/*, **/flake8-report.*', allowEmptyArchive: true
             
             // Create direct links to reports in build description
             script {

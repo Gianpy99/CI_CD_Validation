@@ -5,50 +5,61 @@ I report HTML di pytest generati da `pytest-html` non erano interattivi in Jenki
 
 ## Soluzione Implementata
 
-### 1. Generatore di Report Personalizzato
-- **File**: `generate_jenkins_report.py`
-- **Funzione**: Crea un report HTML completamente auto-contenuto che bypassa i problemi CSP di Jenkins
+### 1. Report in Stile Coverage (RACCOMANDATO)
+- **File**: `generate_coverage_style_report.py`
+- **Funzione**: Crea un report simile a quello di coverage.py con file CSS/JS esterni
+- **Perché Funziona**: Jenkins gestisce meglio i file HTML con risorse esterne (come fa coverage.py)
 - **Caratteristiche**:
-  - CSS inline per styling completo
-  - JavaScript inline che funziona in Jenkins
-  - Layout moderno e responsive
-  - Funzionalità interattive:
-    - Pulsante "Show/Hide All Details"
-    - Click sui test per espandere/collassare dettagli
+  - File HTML principale + CSS esterno + JavaScript esterno
+  - Layout identico al report di coverage per massima compatibilità
+  - Funzionalità interattive complete:
+    - Filtro per nome test
+    - Checkbox "Hide passed tests"
+    - Pulsante "Toggle All Details"
     - Auto-espansione dei test falliti
-    - Statistiche visive con colori
+    - Click sui singoli test per dettagli
 
-### 2. Jenkins Pipeline Migliorata
+### 2. Generatore di Report Personalizzato (Fallback)
+- **File**: `generate_jenkins_report.py`
+- **Funzione**: Crea un report HTML completamente auto-contenuto
+- **Caratteristiche**:
+  - CSS e JavaScript inline
+  - Layout moderno e responsive
+  - Funzionalità interattive base
+
+### 3. Jenkins Pipeline Migliorata
 - **File**: `Jenkinsfile`
 - **Miglioramenti**:
-  - Genera sia il report standard che quello personalizzato
-  - Pubblica entrambi i report con il plugin `publishHTML`
+  - Genera 3 tipi di report pytest diversi per massima compatibilità
+  - Pubblica tutti i report con il plugin `publishHTML`
   - Crea link diretti agli artefatti come fallback
   - Diagnostica migliorata per il debug
 
-### 3. Report Disponibili
-1. **Jenkins Pytest Report (Interactive)** - RACCOMANDATO
-   - Completamente interattivo in Jenkins
-   - Nessun problema CSP
-   - Layout moderno
+### 4. Report Disponibili (in ordine di preferenza)
+1. **Pytest Report (Coverage-Style)** - RACCOMANDATO ⭐
+   - Struttura identica al report di coverage
+   - File CSS/JS esterni per massima compatibilità Jenkins
+   - Tutte le funzionalità interattive funzionanti
 
-2. **Standard Pytest HTML Report** - Fallback
+2. **Jenkins Pytest Report (Single File)** - Fallback
+   - File HTML auto-contenuto
+   - JavaScript inline per compatibilità
+
+3. **Standard Pytest HTML Report** - Ultima risorsa
    - Report generato da pytest-html
    - Potrebbe avere problemi JavaScript in Jenkins
-
-3. **Coverage Report** - Analisi copertura codice
-4. **Flake8 Report** - Qualità del codice
 
 ## Come Utilizzare
 
 ### Nel Jenkins Build
 1. Esegui la pipeline
-2. Nella pagina del build, clicca su "Jenkins Pytest Report (Interactive)"
-3. Il report si aprirà completamente funzionante
+2. Nella pagina del build, clicca su "Pytest Report (Coverage-Style)" - RACCOMANDATO
+3. Il report si aprirà completamente funzionante (come il report di coverage)
 
 ### Link Diretti
 Se i plugin HTML non funzionano, usa i link diretti nella descrizione del build:
-- 🚀 Jenkins Pytest Report (Interactive - RECOMMENDED)
+- 🎯 Coverage-Style Pytest Report (RECOMMENDED)
+- 🚀 Single-File Pytest Report
 - 📋 Standard Pytest HTML Report  
 - 📈 Coverage Report
 - 🔍 Code Quality Report
@@ -56,22 +67,38 @@ Se i plugin HTML non funzionano, usa i link diretti nella descrizione del build:
 ## File di Supporto
 
 ### requirements.txt
-Aggiunto `pytest-json-report` per supportare la generazione del report personalizzato.
+Aggiunto `pytest-json-report` per supportare la generazione dei report personalizzati.
 
 ### jenkins-html-config.properties
 Contiene suggerimenti per configurazioni CSP alternative se necessario.
 
+## Perché Questa Soluzione Funziona
+
+Il problema principale era che Jenkins blocca JavaScript inline nei file HTML per motivi di sicurezza. La soluzione coverage-style funziona perché:
+
+1. **File Separati**: HTML, CSS e JS sono file separati (come coverage.py)
+2. **Struttura Familiare**: Jenkins riconosce e gestisce questa struttura
+3. **Compatibilità**: Stessa architettura del report di coverage che già funziona
+4. **Sicurezza**: Jenkins accetta meglio JavaScript esterno che inline
+
 ## Benefici
-- ✅ Report completamente interattivo in Jenkins
+- ✅ Report completamente interattivo in Jenkins (come coverage)
 - ✅ Nessun problema di sicurezza CSP
-- ✅ Layout moderno e professionale
-- ✅ Fallback multipli per massima compatibilità
-- ✅ Facile manutenzione e aggiornamento
+- ✅ Layout familiare e professionale
+- ✅ Triplo fallback per massima compatibilità
+- ✅ Struttura testata e affidabile
 
 ## Test Locali
 Per testare in locale:
+
 ```bash
+# Report coverage-style (raccomandato)
+python generate_coverage_style_report.py
+
+# Report single-file (fallback)
 python generate_jenkins_report.py
 ```
 
-Il report verrà generato come `jenkins-pytest-report.html` e può essere aperto direttamente in un browser.
+I report vengono generati in:
+- `pytest-report/index.html` (coverage-style)
+- `jenkins-pytest-report.html` (single-file)
