@@ -1,6 +1,8 @@
 import unittest
-from app import (add, subtract, multiply, divide, calculate_percentage,
-                 Calculator)
+from app import (
+    add, subtract, multiply, divide,
+    calculate_percentage, Calculator
+)
 
 
 class TestMathFunctions(unittest.TestCase):
