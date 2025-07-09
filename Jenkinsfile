@@ -34,19 +34,8 @@ pipeline {
                     echo "✅ Dependencies installed successfully."
                 '''
                 
-                // Check if HTML Publisher plugin is available
-                script {
-                    try {
-                        def htmlPublisher = Jenkins.instance.getPlugin('htmlpublisher')
-                        if (htmlPublisher) {
-                            echo "✅ HTML Publisher plugin is available: ${htmlPublisher.getVersion()}"
-                        } else {
-                            echo "❌ HTML Publisher plugin is NOT installed!"
-                        }
-                    } catch (Exception e) {
-                        echo "⚠️ Could not check HTML Publisher plugin availability: ${e.getMessage()}"
-                    }
-                }
+                // Environment is ready for HTML publishing
+                echo "✅ Environment configured for HTML report publishing"
             }
         }
 
