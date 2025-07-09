@@ -1,5 +1,6 @@
 pytest
 pytest-cov
 pytest-html
+pytest-json-report
 flake8
 coverage

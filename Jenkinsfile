@@ -89,16 +89,26 @@ pipeline {
                     fi
 
                     echo "🧪 Running pytest with verbose output..."
-                    # Generate multiple report formats for maximum compatibility
+                    # Generate standard HTML report (may have JS issues in Jenkins)
                     $PYTHON_CMD -m pytest --html=pytest-report.html --self-contained-html --verbose
                     
-                    # Verify the report was created
+                    echo "🚀 Generating Jenkins-compatible HTML report..."
+                    # Generate Jenkins-compatible report that bypasses CSP issues
+                    $PYTHON_CMD generate_jenkins_report.py
+                    
+                    # Verify both reports were created
                     if [ -f "pytest-report.html" ]; then
-                        echo "✅ pytest-report.html generated successfully"
+                        echo "✅ Standard pytest-report.html generated successfully"
                         ls -la pytest-report.html
                     else
-                        echo "❌ pytest-report.html was not generated!"
-                        exit 1
+                        echo "❌ Standard pytest-report.html was not generated!"
+                    fi
+                    
+                    if [ -f "jenkins-pytest-report.html" ]; then
+                        echo "✅ Jenkins-compatible report generated successfully"
+                        ls -la jenkins-pytest-report.html
+                    else
+                        echo "❌ Jenkins-compatible report was not generated!"
                     fi
                     
                     echo "📊 Running coverage analysis..."
@@ -123,19 +133,35 @@ pipeline {
                 
                 script {
                     try {
-                        // Publish Pytest HTML report with enhanced settings
+                        // Publish Jenkins-compatible Pytest report (primary)
+                        publishHTML([
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: '.',
+                            reportFiles: 'jenkins-pytest-report.html',
+                            reportName: 'Jenkins Pytest Report (Interactive)',
+                            reportTitles: 'Interactive Test Results'
+                        ])
+                        echo "✅ Jenkins-compatible pytest report published successfully"
+                    } catch (Exception e) {
+                        echo "❌ Failed to publish Jenkins-compatible pytest report: ${e.getMessage()}"
+                    }
+                    
+                    try {
+                        // Publish standard Pytest HTML report (fallback)
                         publishHTML([
                             allowMissing: false,
                             alwaysLinkToLastBuild: true,
                             keepAll: true,
                             reportDir: '.',
                             reportFiles: 'pytest-report.html',
-                            reportName: 'Pytest HTML Report',
-                            reportTitles: 'Test Results'
+                            reportName: 'Pytest HTML Report (Standard)',
+                            reportTitles: 'Standard Test Results'
                         ])
-                        echo "✅ Pytest HTML report published successfully"
+                        echo "✅ Standard pytest HTML report published successfully"
                     } catch (Exception e) {
-                        echo "❌ Failed to publish Pytest HTML report: ${e.getMessage()}"
+                        echo "❌ Failed to publish standard pytest HTML report: ${e.getMessage()}"
                         echo "📂 Listing workspace files for debugging:"
                         sh 'ls -la *.html || echo "No HTML files found"'
                     }
@@ -181,7 +207,7 @@ pipeline {
             echo 'Pipeline finished. Archiving all reports...'
             
             // Archive artifacts as fallback
-            archiveArtifacts artifacts: '**/pytest-report.html, **/coverage-html/*, **/flake8-report.*', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/pytest-report.html, **/jenkins-pytest-report.html, **/coverage-html/*, **/flake8-report.*', allowEmptyArchive: true
             
             // Create direct links to reports in build description
             script {
@@ -190,7 +216,8 @@ pipeline {
                     def reportLinks = """
                     <h3>📊 Test Reports</h3>
                     <ul>
-                        <li><a href="${buildUrl}artifact/pytest-report.html" target="_blank">📋 Pytest HTML Report (Direct Link)</a></li>
+                        <li><a href="${buildUrl}artifact/jenkins-pytest-report.html" target="_blank">� Jenkins Pytest Report (Interactive - RECOMMENDED)</a></li>
+                        <li><a href="${buildUrl}artifact/pytest-report.html" target="_blank">📋 Standard Pytest HTML Report</a></li>
                         <li><a href="${buildUrl}artifact/coverage-html/index.html" target="_blank">📈 Coverage Report (Direct Link)</a></li>
                         <li><a href="${buildUrl}artifact/flake8-report.html" target="_blank">🔍 Code Quality Report (Direct Link)</a></li>
                     </ul>
