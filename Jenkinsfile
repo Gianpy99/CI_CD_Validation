@@ -33,6 +33,20 @@ pipeline {
                     
                     echo "✅ Dependencies installed successfully."
                 '''
+                
+                // Check if HTML Publisher plugin is available
+                script {
+                    try {
+                        def htmlPublisher = Jenkins.instance.getPlugin('htmlpublisher')
+                        if (htmlPublisher) {
+                            echo "✅ HTML Publisher plugin is available: ${htmlPublisher.getVersion()}"
+                        } else {
+                            echo "❌ HTML Publisher plugin is NOT installed!"
+                        }
+                    } catch (Exception e) {
+                        echo "⚠️ Could not check HTML Publisher plugin availability: ${e.getMessage()}"
+                    }
+                }
             }
         }
 
@@ -74,14 +88,31 @@ pipeline {
                         exit 1
                     fi
 
-                    echo "Running pytest..."
-                    # Generate a self-contained HTML report to ensure JS works correctly
-                    $PYTHON_CMD -m pytest --html=pytest-report.html --self-contained-html
+                    echo "🧪 Running pytest with verbose output..."
+                    # Generate multiple report formats for maximum compatibility
+                    $PYTHON_CMD -m pytest --html=pytest-report.html --self-contained-html --verbose
                     
-                    echo "Running coverage..."
+                    # Verify the report was created
+                    if [ -f "pytest-report.html" ]; then
+                        echo "✅ pytest-report.html generated successfully"
+                        ls -la pytest-report.html
+                    else
+                        echo "❌ pytest-report.html was not generated!"
+                        exit 1
+                    fi
+                    
+                    echo "📊 Running coverage analysis..."
                     $PYTHON_CMD -m coverage run -m pytest
                     $PYTHON_CMD -m coverage report
                     $PYTHON_CMD -m coverage html -d coverage-html
+                    
+                    # Verify coverage report was created
+                    if [ -d "coverage-html" ] && [ -f "coverage-html/index.html" ]; then
+                        echo "✅ Coverage HTML report generated successfully"
+                        ls -la coverage-html/
+                    else
+                        echo "❌ Coverage HTML report was not generated!"
+                    fi
                 '''
             }
         }
@@ -90,35 +121,57 @@ pipeline {
             steps {
                 echo 'Publishing HTML reports...'
                 
-                // Publish Pytest HTML report
-                publishHTML(target: [
-                    allowMissing: true,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'pytest-report.html',
-                    reportName: 'Pytest HTML Report'
-                ])
-                
-                // Publish Coverage HTML report
-                publishHTML(target: [
-                    allowMissing: true,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'coverage-html',
-                    reportFiles: 'index.html',
-                    reportName: 'Coverage HTML Report'
-                ])
-                
-                // Publish Flake8 HTML report
-                publishHTML(target: [
-                    allowMissing: true,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'flake8-report.html',
-                    reportName: 'Flake8 HTML Report'
-                ])
+                script {
+                    try {
+                        // Publish Pytest HTML report with enhanced settings
+                        publishHTML([
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: '.',
+                            reportFiles: 'pytest-report.html',
+                            reportName: 'Pytest HTML Report',
+                            reportTitles: 'Test Results'
+                        ])
+                        echo "✅ Pytest HTML report published successfully"
+                    } catch (Exception e) {
+                        echo "❌ Failed to publish Pytest HTML report: ${e.getMessage()}"
+                        echo "📂 Listing workspace files for debugging:"
+                        sh 'ls -la *.html || echo "No HTML files found"'
+                    }
+                    
+                    try {
+                        // Publish Coverage HTML report
+                        publishHTML([
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'coverage-html',
+                            reportFiles: 'index.html',
+                            reportName: 'Coverage HTML Report',
+                            reportTitles: 'Coverage Report'
+                        ])
+                        echo "✅ Coverage HTML report published successfully"
+                    } catch (Exception e) {
+                        echo "❌ Failed to publish Coverage HTML report: ${e.getMessage()}"
+                    }
+                    
+                    try {
+                        // Publish Flake8 HTML report
+                        publishHTML([
+                            allowMissing: true,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: '.',
+                            reportFiles: 'flake8-report.html',
+                            reportName: 'Flake8 HTML Report',
+                            reportTitles: 'Code Quality Report'
+                        ])
+                        echo "✅ Flake8 HTML report published successfully"
+                    } catch (Exception e) {
+                        echo "❌ Failed to publish Flake8 HTML report: ${e.getMessage()}"
+                    }
+                }
             }
         }
     }
@@ -126,13 +179,34 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished. Archiving all reports...'
+            
+            // Archive artifacts as fallback
             archiveArtifacts artifacts: '**/pytest-report.html, **/coverage-html/*, **/flake8-report.*', allowEmptyArchive: true
+            
+            // Create direct links to reports in build description
+            script {
+                try {
+                    def buildUrl = env.BUILD_URL
+                    def reportLinks = """
+                    <h3>📊 Test Reports</h3>
+                    <ul>
+                        <li><a href="${buildUrl}artifact/pytest-report.html" target="_blank">📋 Pytest HTML Report (Direct Link)</a></li>
+                        <li><a href="${buildUrl}artifact/coverage-html/index.html" target="_blank">📈 Coverage Report (Direct Link)</a></li>
+                        <li><a href="${buildUrl}artifact/flake8-report.html" target="_blank">🔍 Code Quality Report (Direct Link)</a></li>
+                    </ul>
+                    """
+                    currentBuild.description = reportLinks
+                    echo "✅ Build description updated with direct report links"
+                } catch (Exception e) {
+                    echo "⚠️ Could not update build description: ${e.getMessage()}"
+                }
+            }
         }
         success {
-            echo '✅ Pipeline successful!'
+            echo '✅ Pipeline successful! All tests passed and reports generated.'
         }
         failure {
-            echo '❌ Pipeline failed.'
+            echo '❌ Pipeline failed. Check the logs and reports for details.'
         }
     }
 }
