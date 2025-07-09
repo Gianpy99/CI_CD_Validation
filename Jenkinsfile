@@ -6,88 +6,302 @@ pipeline {
     }
 
     stages {
-        stage('Python Discovery') {
+        stage('Setup Environment') {
             steps {
-                echo 'Finding Python on Raspberry Pi...'
+                echo 'Setting up Python environment...'
                 sh '''
-                    echo "=== PYTHON DISCOVERY DEBUG ==="
-                    echo "Current user: $(whoami)"
-                    echo "PATH: $PATH"
-                    echo "Working directory: $(pwd)"
-                    echo ""
+                    echo "🔍 Checking Python availability..."
                     
-                    echo "=== CHECKING COMMON PYTHON LOCATIONS ==="
-                    for path in /usr/bin/python3 /usr/bin/python /usr/local/bin/python3 /usr/local/bin/python /bin/python3 /bin/python; do
-                        if [ -f "$path" ]; then
-                            echo "✅ Found: $path"
-                            $path --version 2>/dev/null || echo "  (but not executable)"
+                    # Check if Python is available (check python first, then python3)
+                    if command -v python >/dev/null 2>&1; then
+                        PYTHON_CMD="python"
+                        echo "✅ Found python: $(which python)"
+                    elif command -v python3 >/dev/null 2>&1; then
+                        PYTHON_CMD="python3"
+                        echo "✅ Found python3: $(which python3)"
+                    else
+                        echo "❌ No Python found! Attempting to install..."
+                        
+                        # Try to install Python (requires sudo)
+                        if command -v apt-get >/dev/null 2>&1; then
+                            echo "🔧 Installing Python via apt-get..."
+                            apt-get update || sudo apt-get update || true
+                            apt-get install -y python3 python3-pip || sudo apt-get install -y python3 python3-pip || true
+                            PYTHON_CMD="python3"
+                        elif command -v yum >/dev/null 2>&1; then
+                            echo "🔧 Installing Python via yum..."
+                            yum install -y python3 python3-pip || sudo yum install -y python3 python3-pip || true
+                            PYTHON_CMD="python3"
                         else
-                            echo "❌ Not found: $path"
+                            echo "💥 CRITICAL: Cannot install Python automatically!"
+                            echo "Please install Python manually on the Raspberry Pi:"
+                            echo "  sudo apt update"
+                            echo "  sudo apt install python3 python3-pip -y"
+                            exit 1
                         fi
-                    done
+                        
+                        # Check if installation worked
+                        if ! command -v $PYTHON_CMD >/dev/null 2>&1; then
+                            echo "💥 Python installation failed!"
+                            exit 1
+                        fi
+                    fi
                     
-                    echo ""
-                    echo "=== SEARCHING WITH FIND ==="
-                    find /usr -name "python*" -type f -executable 2>/dev/null | head -5 || echo "Find failed"
+                    echo "🎯 Using Python command: $PYTHON_CMD"
+                    $PYTHON_CMD --version
                     
-                    echo ""
-                    echo "=== COMMAND TESTS ==="
-                    command -v python3 && echo "command -v python3 works" || echo "command -v python3 fails"
-                    command -v python && echo "command -v python works" || echo "command -v python fails"
-                    which python3 2>/dev/null && echo "which python3 works" || echo "which python3 fails"
-                    which python 2>/dev/null && echo "which python works" || echo "which python fails"
+                    # Check pip
+                    if $PYTHON_CMD -m pip --version >/dev/null 2>&1; then
+                        echo "✅ pip available"
+                    else
+                        echo "❌ pip not available, trying to install..."
+                        $PYTHON_CMD -m ensurepip --default-pip || true
+                    fi
+                    
+                    # Upgrade pip and install requirements
+                    echo "📦 Installing packages..."
+                    $PYTHON_CMD -m pip install --upgrade pip --user || $PYTHON_CMD -m pip install --upgrade pip || true
+                    $PYTHON_CMD -m pip install -r requirements.txt --user || $PYTHON_CMD -m pip install -r requirements.txt || true
                 '''
             }
         }
         
-        stage('Simple Test') {
+        stage('Debug Environment') {
             steps {
-                echo 'Testing if we can run Python with absolute path...'
+                echo 'Running environment debug...'
                 sh '''
-                    # Try absolute paths first
-                    if [ -x "/usr/bin/python3" ]; then
-                        echo "✅ Using /usr/bin/python3"
-                        /usr/bin/python3 --version
-                        /usr/bin/python3 -c "import sys; print('Python works! Path:', sys.executable)"
-                        
-                        # Try running our app
-                        echo "Testing app.py..."
-                        /usr/bin/python3 app.py
-                        
-                        # Try running basic tests
-                        echo "Testing unittest..."
-                        /usr/bin/python3 -m unittest test_app.py -v || echo "Tests failed as expected due to multiply bug"
-                        
-                    elif [ -x "/usr/bin/python" ]; then
-                        echo "✅ Using /usr/bin/python"
-                        /usr/bin/python --version
-                        /usr/bin/python -c "import sys; print('Python works! Path:', sys.executable)"
-                        
-                        # Try running our app
-                        echo "Testing app.py..."
-                        /usr/bin/python app.py
-                        
-                        # Try running basic tests
-                        echo "Testing unittest..."
-                        /usr/bin/python -m unittest test_app.py -v || echo "Tests failed as expected due to multiply bug"
-                        
+                    chmod +x debug-jenkins.sh
+                    ./debug-jenkins.sh
+                '''
+            }
+        }
+        
+        stage('Code Quality Check') {
+            steps {
+                echo 'Running code quality checks...'
+                sh '''
+                    # Determine Python command (python first, then python3)
+                    if command -v python >/dev/null 2>&1; then
+                        PYTHON_CMD="python"
+                    elif command -v python3 >/dev/null 2>&1; then
+                        PYTHON_CMD="python3"
                     else
-                        echo "❌ No Python executable found!"
-                        echo "Available executables in /usr/bin:"
-                        ls -la /usr/bin/ | grep python || echo "No python files"
+                        echo "❌ No Python found!"
                         exit 1
                     fi
+                    
+                    $PYTHON_CMD -m flake8 app.py test_app.py --output-file=flake8-report.txt || true
                 '''
+                archiveArtifacts artifacts: 'flake8-report.txt', allowEmptyArchive: true
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                echo 'Running comprehensive testing...'
+                sh '''
+                    # Determine Python command (python first, then python3)
+                    if command -v python >/dev/null 2>&1; then
+                        PYTHON_CMD="python"
+                    elif command -v python3 >/dev/null 2>&1; then
+                        PYTHON_CMD="python3"
+                    else
+                        echo "❌ No Python found!"
+                        exit 1
+                    fi
+                    
+                    echo "Using Python command: $PYTHON_CMD"
+                    
+                    # Create test reports directory
+                    mkdir -p test-reports
+                    
+                    # Run unittest tests first - FAIL BUILD IF THESE FAIL
+                    echo "=== Running unittest tests ==="
+                    set +e  # Don't exit immediately on error
+                    $PYTHON_CMD -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1
+                    UNITTEST_STATUS=$?
+                    cat test-reports/unittest-output.txt
+                    
+                    # Run pytest tests - FAIL BUILD IF THESE FAIL  
+                    echo "=== Running pytest tests ==="
+                    $PYTHON_CMD -m pytest test_app_pytest.py -v \\
+                        --junitxml=test-reports/pytest-results.xml \\
+                        --html=test-reports/pytest-report.html --self-contained-html \\
+                        --tb=short > test-reports/pytest-output.txt 2>&1
+                    PYTEST_STATUS=$?
+                    cat test-reports/pytest-output.txt
+                    set -e  # Re-enable exit on error
+                    
+                    # Generate coverage (optional, don't fail build)
+                    echo "=== Generating coverage report ==="
+                    $PYTHON_CMD -m coverage run --source=. -m unittest test_app.py || true
+                    $PYTHON_CMD -m coverage xml -o test-reports/coverage.xml || true
+                    $PYTHON_CMD -m coverage html -d test-reports/htmlcov || true
+                    $PYTHON_CMD -m coverage report | tee test-reports/coverage-summary.txt || true
+                    
+                    # Create build summary
+                    echo "=== BUILD SUMMARY ===" | tee test-reports/test-summary.txt
+                    echo "Build Number: ${BUILD_NUMBER}" >> test-reports/test-summary.txt
+                    echo "Timestamp: $(date)" >> test-reports/test-summary.txt
+                    echo "Branch: ${GIT_BRANCH}" >> test-reports/test-summary.txt
+                    echo "" >> test-reports/test-summary.txt
+                    
+                    if [ $UNITTEST_STATUS -eq 0 ]; then
+                        echo "✅ UNITTEST: PASSED" | tee -a test-reports/test-summary.txt
+                    else
+                        echo "❌ UNITTEST: FAILED" | tee -a test-reports/test-summary.txt
+                    fi
+                    
+                    if [ $PYTEST_STATUS -eq 0 ]; then
+                        echo "✅ PYTEST: PASSED" | tee -a test-reports/test-summary.txt
+                    else
+                        echo "❌ PYTEST: FAILED" | tee -a test-reports/test-summary.txt
+                    fi
+                    
+                    echo "" >> test-reports/test-summary.txt
+                    echo "Coverage Summary:" >> test-reports/test-summary.txt
+                    cat test-reports/coverage-summary.txt >> test-reports/test-summary.txt || echo "Coverage not available" >> test-reports/test-summary.txt
+                    
+                    # Display final summary
+                    echo ""
+                    echo "📋 FINAL BUILD SUMMARY 📋"
+                    cat test-reports/test-summary.txt
+                    echo ""
+                    
+                    # CRITICAL: Check if any tests failed and FAIL THE BUILD
+                    if [ $UNITTEST_STATUS -ne 0 ] || [ $PYTEST_STATUS -ne 0 ]; then
+                        echo "🚨🚨🚨 BUILD FAILURE! TESTS FAILED! 🚨🚨🚨"
+                        echo "� BLOCKING DEPLOYMENT TO PROTECT PRODUCTION"
+                        echo "🔧 Fix the failing tests and commit again"
+                        echo ""
+                        echo "Exit codes:"
+                        echo "  - Unittest: $UNITTEST_STATUS"
+                        echo "  - Pytest: $PYTEST_STATUS"
+                        echo ""
+                        exit 1
+                    fi
+                    
+                    echo "✅ ALL TESTS PASSED! BUILD SUCCESS!"
+                    echo "🚀 Safe to proceed with deployment"
+                '''
+            }
+            post {
+                always {
+                    // Pubblica risultati dei test JUnit
+                    junit testResults: 'test-reports/pytest-results.xml', allowEmptyResults: true
+                    
+                    // Pubblica report HTML dei test
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'test-reports',
+                        reportFiles: 'pytest-report.html',
+                        reportName: 'Pytest Report',
+                        reportTitles: 'Test Results'
+                    ])
+                    
+                    // Pubblica report di coverage
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'test-reports/htmlcov',
+                        reportFiles: 'index.html',
+                        reportName: 'Coverage Report',
+                        reportTitles: 'Code Coverage'
+                    ])
+                    
+                    // Archivia tutti i report
+                    archiveArtifacts artifacts: 'test-reports/**/*', allowEmptyArchive: true, fingerprint: true
+                }
+            }
+        }
+        
+        stage('Build Artifact') {
+            steps {
+                echo 'Creating build artifact...'
+                sh '''
+                    mkdir -p dist
+                    cp app.py dist/
+                    echo "Build completed on $(date)" > dist/build-info.txt
+                    echo "Commit: $GIT_COMMIT" >> dist/build-info.txt
+                    echo "Branch: $GIT_BRANCH" >> dist/build-info.txt
+                    tar -czf app-${BUILD_NUMBER}.tar.gz dist/
+                '''
+                archiveArtifacts artifacts: 'app-*.tar.gz', fingerprint: true
+            }
+        }
+        
+        stage('Deploy to Staging') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo 'Deploying to staging environment...'
+                sh '''
+                    echo "Simulating deployment to staging..."
+                    echo "Application deployed successfully to staging at $(date)" > deployment-log.txt
+                '''
+                archiveArtifacts artifacts: 'deployment-log.txt', allowEmptyArchive: true
             }
         }
     }
     
     post {
         always {
-            echo '📋 Discovery complete!'
+            echo '📋 Pipeline completed!'
+            script {
+                // Stampa un summary finale molto chiaro
+                echo """
+                =====================================
+                🚀 JENKINS BUILD SUMMARY
+                =====================================
+                Build: #${BUILD_NUMBER}
+                Status: ${currentBuild.result ?: 'SUCCESS'}
+                Duration: ${currentBuild.durationString}
+                Workspace: ${WORKSPACE}
+                =====================================
+                📊 REPORTS AVAILABLE:
+                • Test Results (JUnit): Check 'Test Results' tab
+                • Pytest Report: Check 'Pytest Report' link  
+                • Coverage Report: Check 'Coverage Report' link
+                • Build Artifacts: Check 'Build Artifacts' section
+                =====================================
+                """
+            }
+            // cleanWs() non disponibile in questa installazione Jenkins
+        }
+        success {
+            echo '✅ Pipeline succeeded! 🎉'
+            script {
+                echo """
+                🎉 BUILD SUCCESSFUL! 
+                All tests passed. Ready for deployment.
+                Check the reports above for detailed metrics.
+                """
+            }
         }
         failure {
-            echo '❌ Discovery failed!'
+            echo '❌ Pipeline failed! 💥'
+            script {
+                echo """
+                💥 BUILD FAILED!
+                Check the console output and test reports for details.
+                Fix the issues and try again.
+                """
+            }
+        }
+        unstable {
+            echo '⚠️ Pipeline unstable! Some tests failed.'
+            script {
+                echo """
+                ⚠️ BUILD UNSTABLE!
+                Some tests failed but build artifacts were created.
+                Check test reports to see which tests failed.
+                Review the 'Test Results' and 'Pytest Report' for details.
+                """
+            }
         }
     }
 }
