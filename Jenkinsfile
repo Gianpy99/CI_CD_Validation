@@ -70,8 +70,11 @@ pipeline {
                     fi
                     
                     $PYTHON_CMD -m flake8 app.py test_app.py --output-file=flake8-report.txt || true
+                    
+                    # Genera anche il report HTML di flake8 se possibile
+                    $PYTHON_CMD -m flake8 app.py test_app.py --format=html --output-file=flake8-report.html || true
                 '''
-                archiveArtifacts artifacts: 'flake8-report.txt', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'flake8-report.*', allowEmptyArchive: true
             }
         }
         
@@ -169,30 +172,44 @@ pipeline {
                     // Pubblica risultati dei test JUnit
                     junit testResults: 'test-reports/pytest-results.xml', allowEmptyResults: true
                     
-                    // Pubblica report HTML dei test
-                    publishHTML([
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'test-reports',
-                        reportFiles: 'pytest-report.html',
-                        reportName: 'Pytest Report',
-                        reportTitles: 'Test Results'
-                    ])
-                    
-                    // Pubblica report di coverage
-                    publishHTML([
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'test-reports/htmlcov',
-                        reportFiles: 'index.html',
-                        reportName: 'Coverage Report',
-                        reportTitles: 'Code Coverage'
-                    ])
-                    
-                    // Archivia tutti i report
+                    // Archivia TUTTI i report come build artifacts
+                    // Questo include sia i file di testo che i report HTML
                     archiveArtifacts artifacts: 'test-reports/**/*', allowEmptyArchive: true, fingerprint: true
+                    
+                    // Prova a pubblicare report HTML se il plugin è disponibile
+                    script {
+                        try {
+                            publishHTML([
+                                allowMissing: true,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: 'test-reports',
+                                reportFiles: 'pytest-report.html',
+                                reportName: 'Pytest HTML Report',
+                                reportTitles: 'Test Results'
+                            ])
+                            echo '✅ HTML Publisher: Pytest report published'
+                        } catch (Exception e) {
+                            echo "⚠️ HTML Publisher plugin not available for pytest report: ${e.getMessage()}"
+                            echo "📁 HTML reports are still available as build artifacts"
+                        }
+                        
+                        try {
+                            publishHTML([
+                                allowMissing: true,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: 'test-reports/htmlcov',
+                                reportFiles: 'index.html',
+                                reportName: 'Coverage HTML Report',
+                                reportTitles: 'Code Coverage'
+                            ])
+                            echo '✅ HTML Publisher: Coverage report published'
+                        } catch (Exception e) {
+                            echo "⚠️ HTML Publisher plugin not available for coverage report: ${e.getMessage()}"
+                            echo "📁 HTML reports are still available as build artifacts"
+                        }
+                    }
                 }
             }
         }
@@ -243,9 +260,14 @@ pipeline {
                 =====================================
                 📊 REPORTS AVAILABLE:
                 • Test Results (JUnit): Check 'Test Results' tab
-                • Pytest Report: Check 'Pytest Report' link  
-                • Coverage Report: Check 'Coverage Report' link
-                • Build Artifacts: Check 'Build Artifacts' section
+                • Build Artifacts with HTML Reports:
+                  - pytest-report.html (Test Results)
+                  - htmlcov/index.html (Coverage Report)  
+                  - flake8-report.html (Code Quality)
+                  - All test outputs in test-reports/
+                =====================================
+                💡 TIP: Download HTML reports from 'Build Artifacts' 
+                   and open them in your browser for full interactivity!
                 =====================================
                 """
             }
