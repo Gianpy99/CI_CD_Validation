@@ -42,7 +42,7 @@ pipeline {
                     $PYTHON_CMD -m pip install --upgrade pip --break-system-packages || $PYTHON_CMD -m pip install --upgrade pip
                     $PYTHON_CMD -m pip install --break-system-packages -r requirements.txt || $PYTHON_CMD -m pip install -r requirements.txt
                     # Aggiorna pytest-html all'ultima versione per garantire compatibilità report
-                    $PYTHON_CMD -m pip install --upgrade pytest-html
+                    $PYTHON_CMD -m pip install --upgrade pytest-html --break-system-packages || $PYTHON_CMD -m pip install --upgrade pytest-html
                 '''
             }
         }
