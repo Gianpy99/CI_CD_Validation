@@ -1,48 +1,48 @@
 def add(a, b):
-    """Add two numbers together"""
+    """Add two numbers together."""
     return a + b
 
 
 def subtract(a, b):
-    """Subtract b from a"""
+    """Subtract b from a."""
     return a - b
 
 
 def multiply(a, b):
-    """Multiply two numbers"""
-    return a * b  # BUG FIXED: Now correctly multiplies
+    """Multiply two numbers."""
+    return a * b
 
 
 def divide(a, b):
-    """Divide a by b"""
+    """Divide a by b."""
     if b == 0:
         raise ValueError("Cannot divide by zero!")
     return a / b
 
 
 def calculate_percentage(value, total):
-    """Calculate percentage of value from total"""
+    """Calculate percentage of value from total."""
     if total == 0:
         raise ValueError("Total cannot be zero!")
     return (value / total) * 100
 
 
 class Calculator:
-    """A simple calculator class"""
+    """A simple calculator class."""
 
     def __init__(self):
         self.history = []
 
     def add_to_history(self, operation, result):
-        """Add operation to calculation history"""
+        """Add operation to calculation history."""
         self.history.append(f"{operation} = {result}")
 
     def get_history(self):
-        """Get calculation history"""
+        """Get calculation history."""
         return self.history
 
     def clear_history(self):
-        """Clear calculation history"""
+        """Clear calculation history."""
         self.history = []
 
 
