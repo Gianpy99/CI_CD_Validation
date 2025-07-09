@@ -1,13 +1,13 @@
 ﻿===============================================
 DETAILED BUILD REPORT
 ===============================================
-Generated: 07/09/2025 11:20:27
+Generated: 07/09/2025 11:29:27
 Project: CI_CD_Validation
 Branch: local
 Commit: local-dev
 ===============================================
 UNITTEST RESULTS
-===============================================UNITTEST: SOME TESTS FAILED
+===============================================UNITTEST: ALL TESTS PASSED
 
 Detailed unittest output:
 test_add_to_history (test_app.TestCalculator)
@@ -27,27 +27,18 @@ Test division function ... ok
 test_divide_by_zero (test_app.TestMathFunctions)
 Test division by zero raises exception ... ok
 test_multiply (test_app.TestMathFunctions)
-Test multiplication function ... FAIL
+Test multiplication function ... ok
 test_subtract (test_app.TestMathFunctions)
 Test subtraction function ... ok
 System.Management.Automation.RemoteException
-======================================================================
-FAIL: test_multiply (test_app.TestMathFunctions)
-Test multiplication function
 ----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "C:\Development\CI_CD_Validation\test_app.py", line 23, in test_multiply
-    self.assertEqual(multiply(3, 4), 12)
-AssertionError: 7 != 12
+Ran 10 tests in 0.000s
 System.Management.Automation.RemoteException
-----------------------------------------------------------------------
-Ran 10 tests in 0.001s
-System.Management.Automation.RemoteException
-FAILED (failures=1)
+OK
 
 ===============================================
 PYTEST RESULTS
-===============================================PYTEST: SOME TESTS FAILED
+===============================================PYTEST: ALL TESTS PASSED
 
 Detailed pytest output:
 [1m============================= test session starts =============================[0m
@@ -69,45 +60,15 @@ test_app_pytest.py::TestAdd::test_add_parametrized[0-0-0] [32mPASSED[0m[33m  
 test_app_pytest.py::TestAdd::test_add_parametrized[-1-1-0] [32mPASSED[0m[33m        [ 53%][0m
 test_app_pytest.py::TestAdd::test_add_parametrized[100--50-50] [32mPASSED[0m[33m    [ 60%][0m
 test_app_pytest.py::TestAdd::test_add_parametrized[2.5-3.5-6.0] [32mPASSED[0m[33m   [ 66%][0m
-test_app_pytest.py::TestMultiply::test_multiply_positive [31mFAILED[0m[31m          [ 73%][0m
-test_app_pytest.py::TestMultiply::test_multiply_with_zero [31mFAILED[0m[31m         [ 80%][0m
-test_app_pytest.py::TestMultiply::test_multiply_negative [31mFAILED[0m[31m          [ 86%][0m
-test_app_pytest.py::TestAllFunctions::test_basic_operations [31mFAILED[0m[31m       [ 93%][0m
-test_app_pytest.py::TestAllFunctions::test_calculator_class [32mPASSED[0m[31m       [100%][0m
+test_app_pytest.py::TestMultiply::test_multiply_positive [32mPASSED[0m[33m          [ 73%][0m
+test_app_pytest.py::TestMultiply::test_multiply_with_zero [32mPASSED[0m[33m         [ 80%][0m
+test_app_pytest.py::TestMultiply::test_multiply_negative [32mPASSED[0m[33m          [ 86%][0m
+test_app_pytest.py::TestAllFunctions::test_basic_operations [32mPASSED[0m[33m       [ 93%][0m
+test_app_pytest.py::TestAllFunctions::test_calculator_class [32mPASSED[0m[33m       [100%][0m
 
-================================== FAILURES ===================================
-[31m[1m_____________________ TestMultiply.test_multiply_positive _____________________[0m
-[1m[31mtest_app_pytest.py[0m:51: in test_multiply_positive
-    [0m[94massert[39;49;00m multiply([94m3[39;49;00m, [94m4[39;49;00m) == [94m12[39;49;00m  [90m# This will fail! (7 != 12)[39;49;00m[90m[39;49;00m
-[1m[31mE   assert 7 == 12[0m
-[1m[31mE    +  where 7 = multiply(3, 4)[0m
-[31m[1m____________________ TestMultiply.test_multiply_with_zero _____________________[0m
-[1m[31mtest_app_pytest.py[0m:56: in test_multiply_with_zero
-    [0m[94massert[39;49;00m multiply([94m5[39;49;00m, [94m0[39;49;00m) == [94m0[39;49;00m   [90m# This will fail! (5 != 0)[39;49;00m[90m[39;49;00m
-[1m[31mE   assert 5 == 0[0m
-[1m[31mE    +  where 5 = multiply(5, 0)[0m
-[31m[1m_____________________ TestMultiply.test_multiply_negative _____________________[0m
-[1m[31mtest_app_pytest.py[0m:61: in test_multiply_negative
-    [0m[94massert[39;49;00m multiply(-[94m2[39;49;00m, [94m3[39;49;00m) == -[94m6[39;49;00m  [90m# This will fail! (1 != -6)[39;49;00m[90m[39;49;00m
-[1m[31mE   assert 1 == -6[0m
-[1m[31mE    +  where 1 = multiply(-2, 3)[0m
-[31m[1m___________________ TestAllFunctions.test_basic_operations ____________________[0m
-[1m[31mtest_app_pytest.py[0m:71: in test_basic_operations
-    [0m[94massert[39;49;00m multiply([94m3[39;49;00m, [94m7[39;49;00m) == [94m21[39;49;00m  [90m# This will fail! (10 != 21)[39;49;00m[90m[39;49;00m
-[1m[31mE   assert 10 == 21[0m
-[1m[31mE    +  where 10 = multiply(3, 7)[0m
 - generated xml file: C:\Development\CI_CD_Validation\detailed-reports\pytest-results.xml -
 - Generated html report: file:///C:/Development/CI_CD_Validation/detailed-reports/pytest-report.html -
-[36m[1m=========================== short test summary info ===========================[0m
-[31mFAILED[0m test_app_pytest.py::[1mTestMultiply::test_multiply_positive[0m - assert 7 == 12
- +  where 7 = multiply(3, 4)
-[31mFAILED[0m test_app_pytest.py::[1mTestMultiply::test_multiply_with_zero[0m - assert 5 == 0
- +  where 5 = multiply(5, 0)
-[31mFAILED[0m test_app_pytest.py::[1mTestMultiply::test_multiply_negative[0m - assert 1 == -6
- +  where 1 = multiply(-2, 3)
-[31mFAILED[0m test_app_pytest.py::[1mTestAllFunctions::test_basic_operations[0m - assert 10 == 21
- +  where 10 = multiply(3, 7)
-[31m=================== [31m[1m4 failed[0m, [32m11 passed[0m, [33m1 warning[0m[31m in 0.20s[0m[31m ===================[0m
+[33m======================== [32m15 passed[0m, [33m[1m1 warning[0m[33m in 0.04s[0m[33m ========================[0m
 
 ===============================================
 CODE COVERAGE ANALYSIS
@@ -122,9 +83,9 @@ CODE QUALITY ANALYSIS
 ===============================================
 ===============================================
 OVERALL BUILD SUMMARY
-===============================================Overall Status: FAILED
-Unittest: FAILED
-Pytest: FAILED
+===============================================Overall Status: SUCCESS
+Unittest: PASSED
+Pytest: PASSED
 Code Quality: 
 
 Generated Files:
