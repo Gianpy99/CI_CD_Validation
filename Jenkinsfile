@@ -67,8 +67,12 @@ pipeline {
                     echo "Generating flake8 reports..."
                     # Generate text report, continue on error to not block the pipeline
                     $PYTHON_CMD -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --output-file=flake8-report.txt || true
-                    # Generate HTML report, requires flake8-html package (in requirements.txt)
-                    $PYTHON_CMD -m flake8 . --format=html --output-file=flake8-report.html || true
+                    # Generate detailed text report for custom HTML conversion
+                    $PYTHON_CMD -m flake8 . --show-source --statistics --output-file=flake8-detailed.txt || true
+                    
+                    echo "🎨 Generating custom flake8 HTML report..."
+                    # Generate custom HTML report using our script
+                    $PYTHON_CMD generate_flake8_report.py
                 '''
                 archiveArtifacts artifacts: 'flake8-report.*', allowEmptyArchive: true
             }
@@ -131,6 +135,15 @@ pipeline {
                         ls -la reports-dashboard.html
                     else
                         echo "❌ Reports dashboard was not generated!"
+                    fi
+                    
+                    # Verify flake8 report was created
+                    if [ -f "flake8-report.html" ]; then
+                        echo "✅ Custom flake8 HTML report generated successfully"
+                        ls -la flake8-report.html
+                        echo "Report size: $(wc -c < flake8-report.html) bytes"
+                    else
+                        echo "❌ Custom flake8 HTML report was not generated!"
                     fi
                     
                     echo "📊 Running coverage analysis..."
@@ -261,7 +274,7 @@ pipeline {
             echo 'Pipeline finished. Archiving all reports...'
             
             // Archive artifacts as fallback
-            archiveArtifacts artifacts: '**/pytest-report.html, **/jenkins-pytest-report.html, **/pytest-report/*, **/coverage-html/*, **/flake8-report.*, **/reports-dashboard.html', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/pytest-report.html, **/jenkins-pytest-report.html, **/pytest-report/*, **/coverage-html/*, **/flake8-report.html, **/flake8-report.txt, **/reports-dashboard.html', allowEmptyArchive: true
             
             // Create direct links to reports in build description
             script {
