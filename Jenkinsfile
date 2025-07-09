@@ -12,7 +12,7 @@ pipeline {
                 sh '''
                     echo "🔍 Checking Python availability..."
                     
-                    # Check if Python is available (check python first, then python3)
+                    # Check if Python is available (python first, then python3)
                     if command -v python >/dev/null 2>&1; then
                         PYTHON_CMD="python"
                         echo "✅ Found python: $(which python)"
@@ -20,29 +20,24 @@ pipeline {
                         PYTHON_CMD="python3"
                         echo "✅ Found python3: $(which python3)"
                     else
-                        echo "❌ No Python found! Attempting to install..."
+                        echo "❌ No Python found! Installing Python in container..."
                         
-                        # Try to install Python (requires sudo)
-                        if command -v apt-get >/dev/null 2>&1; then
-                            echo "🔧 Installing Python via apt-get..."
-                            apt-get update || sudo apt-get update || true
-                            apt-get install -y python3 python3-pip || sudo apt-get install -y python3 python3-pip || true
+                        # Install Python without sudo (we're likely root in container)
+                        echo "🔧 Installing Python via apt-get as root..."
+                        apt-get update || echo "apt-get update failed"
+                        apt-get install -y python3 python3-pip || echo "apt-get install failed"
+                        
+                        # Set Python command
+                        if command -v python3 >/dev/null 2>&1; then
                             PYTHON_CMD="python3"
-                        elif command -v yum >/dev/null 2>&1; then
-                            echo "🔧 Installing Python via yum..."
-                            yum install -y python3 python3-pip || sudo yum install -y python3 python3-pip || true
-                            PYTHON_CMD="python3"
+                            echo "✅ Python3 installed successfully"
+                        elif command -v python >/dev/null 2>&1; then
+                            PYTHON_CMD="python"
+                            echo "✅ Python installed successfully"
                         else
-                            echo "💥 CRITICAL: Cannot install Python automatically!"
-                            echo "Please install Python manually on the Raspberry Pi:"
-                            echo "  sudo apt update"
-                            echo "  sudo apt install python3 python3-pip -y"
-                            exit 1
-                        fi
-                        
-                        # Check if installation worked
-                        if ! command -v $PYTHON_CMD >/dev/null 2>&1; then
-                            echo "💥 Python installation failed!"
+                            echo "💥 CRITICAL: Cannot install Python in container!"
+                            echo "Consider using a Jenkins image with Python pre-installed"
+                            echo "Or manually install Python in the Jenkins container"
                             exit 1
                         fi
                     fi
@@ -60,8 +55,8 @@ pipeline {
                     
                     # Upgrade pip and install requirements
                     echo "📦 Installing packages..."
-                    $PYTHON_CMD -m pip install --upgrade pip --user || $PYTHON_CMD -m pip install --upgrade pip || true
-                    $PYTHON_CMD -m pip install -r requirements.txt --user || $PYTHON_CMD -m pip install -r requirements.txt || true
+                    $PYTHON_CMD -m pip install --upgrade pip || true
+                    $PYTHON_CMD -m pip install -r requirements.txt || true
                 '''
             }
         }
