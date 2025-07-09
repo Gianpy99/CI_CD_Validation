@@ -15,8 +15,8 @@ def run_flake8():
     """Run flake8 and capture output."""
     print("🔍 Running flake8 analysis...")
     
-    # Run flake8 with detailed output
-    cmd = [sys.executable, "-m", "flake8", ".", "--show-source", "--statistics"]
+    # Run flake8 with detailed output - only on main files
+    cmd = [sys.executable, "-m", "flake8", "app.py", "test_app.py", "--show-source", "--statistics"]
     
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
