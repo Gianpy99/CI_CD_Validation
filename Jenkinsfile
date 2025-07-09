@@ -110,15 +110,15 @@ pipeline {
             cleanWs()
         }
         success {
-            echo 'Pipeline succeeded! 🎉'
+            echo 'Pipeline succeeded! '
             // Qui potresti aggiungere notifiche (email, Slack, etc.)
         }
         failure {
-            echo 'Pipeline failed! ❌'
+            echo 'Pipeline failed! '
             // Qui potresti aggiungere notifiche di errore
         }
         unstable {
-            echo 'Pipeline unstable! ⚠️'
+            echo 'Pipeline unstable! '
         }
     }
 }
