@@ -36,77 +36,75 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running comprehensive testing...'
-                script {
-                    sh '''
-                        # Create test reports directory
-                        mkdir -p test-reports
-                        
-                        # Initialize status tracking
-                        OVERALL_STATUS=0
-                        
-                        # Run unittest tests first
-                        echo "=== Running unittest tests ==="
-                        python3 -m unittest test_app.py -v > test-reports/unittest-output.txt 2>&1
-                        UNITTEST_STATUS=$?
-                        if [ $UNITTEST_STATUS -ne 0 ]; then
-                            echo "❌ UNITTEST FAILED!" > test-reports/unittest-status.txt
-                            OVERALL_STATUS=1
-                        else
-                            echo "✅ UNITTEST PASSED!" > test-reports/unittest-status.txt
-                        fi
-                        
-                        # Run pytest tests with detailed output
-                        echo "=== Running pytest tests ==="
-                        python3 -m pytest test_app_pytest.py -v \\
-                            --junitxml=test-reports/pytest-results.xml \\
-                            --html=test-reports/pytest-report.html --self-contained-html \\
-                            --tb=short > test-reports/pytest-output.txt 2>&1
-                        PYTEST_STATUS=$?
-                        if [ $PYTEST_STATUS -ne 0 ]; then
-                            echo "❌ PYTEST FAILED!" > test-reports/pytest-status.txt
-                            OVERALL_STATUS=1
-                        else
-                            echo "✅ PYTEST PASSED!" > test-reports/pytest-status.txt
-                        fi
-                        
-                        # Generate coverage (don't fail build on coverage issues)
-                        echo "=== Generating coverage report ==="
-                        python3 -m coverage run --source=. -m unittest test_app.py || true
-                        python3 -m coverage xml -o test-reports/coverage.xml || true
-                        python3 -m coverage html -d test-reports/htmlcov || true
-                        python3 -m coverage report > test-reports/coverage-summary.txt || true
-                        
-                        # Create consolidated test summary
-                        echo "=== Test Summary ===" > test-reports/test-summary.txt
-                        echo "Build Number: ${BUILD_NUMBER}" >> test-reports/test-summary.txt
-                        echo "Timestamp: $(date)" >> test-reports/test-summary.txt
-                        echo "Branch: ${GIT_BRANCH}" >> test-reports/test-summary.txt
-                        echo "" >> test-reports/test-summary.txt
-                        
-                        cat test-reports/unittest-status.txt >> test-reports/test-summary.txt
-                        cat test-reports/pytest-status.txt >> test-reports/test-summary.txt
-                        
-                        echo "" >> test-reports/test-summary.txt
-                        echo "=== Coverage Summary ===" >> test-reports/test-summary.txt
-                        cat test-reports/coverage-summary.txt >> test-reports/test-summary.txt || echo "Coverage not available" >> test-reports/test-summary.txt
-                        
-                        # Display summary in console
-                        echo "📋 BUILD SUMMARY 📋"
-                        cat test-reports/test-summary.txt
-                        
-                        # CRITICAL: Fail the build if tests failed
-                        if [ $OVERALL_STATUS -ne 0 ]; then
-                            echo ""
-                            echo "🚨 CRITICAL: TESTS FAILED! BUILD MUST FAIL! 🚨"
-                            echo "🛡️  This protects production from buggy code"
-                            echo "🔧 Fix the failing tests and commit again"
-                            exit 1
-                        fi
-                        
+                sh '''
+                    # Create test reports directory
+                    mkdir -p test-reports
+                    
+                    # Run unittest tests first - FAIL BUILD IF THESE FAIL
+                    echo "=== Running unittest tests ==="
+                    python3 -m unittest test_app.py -v | tee test-reports/unittest-output.txt
+                    UNITTEST_STATUS=${PIPESTATUS[0]}
+                    
+                    # Run pytest tests - FAIL BUILD IF THESE FAIL  
+                    echo "=== Running pytest tests ==="
+                    python3 -m pytest test_app_pytest.py -v \\
+                        --junitxml=test-reports/pytest-results.xml \\
+                        --html=test-reports/pytest-report.html --self-contained-html \\
+                        --tb=short | tee test-reports/pytest-output.txt
+                    PYTEST_STATUS=${PIPESTATUS[0]}
+                    
+                    # Generate coverage (optional, don't fail build)
+                    echo "=== Generating coverage report ==="
+                    python3 -m coverage run --source=. -m unittest test_app.py || true
+                    python3 -m coverage xml -o test-reports/coverage.xml || true
+                    python3 -m coverage html -d test-reports/htmlcov || true
+                    python3 -m coverage report | tee test-reports/coverage-summary.txt || true
+                    
+                    # Create build summary
+                    echo "=== BUILD SUMMARY ===" | tee test-reports/test-summary.txt
+                    echo "Build Number: ${BUILD_NUMBER}" >> test-reports/test-summary.txt
+                    echo "Timestamp: $(date)" >> test-reports/test-summary.txt
+                    echo "Branch: ${GIT_BRANCH}" >> test-reports/test-summary.txt
+                    echo "" >> test-reports/test-summary.txt
+                    
+                    if [ $UNITTEST_STATUS -eq 0 ]; then
+                        echo "✅ UNITTEST: PASSED" | tee -a test-reports/test-summary.txt
+                    else
+                        echo "❌ UNITTEST: FAILED" | tee -a test-reports/test-summary.txt
+                    fi
+                    
+                    if [ $PYTEST_STATUS -eq 0 ]; then
+                        echo "✅ PYTEST: PASSED" | tee -a test-reports/test-summary.txt
+                    else
+                        echo "❌ PYTEST: FAILED" | tee -a test-reports/test-summary.txt
+                    fi
+                    
+                    echo "" >> test-reports/test-summary.txt
+                    echo "Coverage Summary:" >> test-reports/test-summary.txt
+                    cat test-reports/coverage-summary.txt >> test-reports/test-summary.txt || echo "Coverage not available" >> test-reports/test-summary.txt
+                    
+                    # Display final summary
+                    echo ""
+                    echo "📋 FINAL BUILD SUMMARY 📋"
+                    cat test-reports/test-summary.txt
+                    echo ""
+                    
+                    # CRITICAL: Check if any tests failed and FAIL THE BUILD
+                    if [ $UNITTEST_STATUS -ne 0 ] || [ $PYTEST_STATUS -ne 0 ]; then
+                        echo "🚨🚨🚨 BUILD FAILURE! TESTS FAILED! 🚨🚨🚨"
+                        echo "� BLOCKING DEPLOYMENT TO PROTECT PRODUCTION"
+                        echo "🔧 Fix the failing tests and commit again"
                         echo ""
-                        echo "✅ All tests passed! Build can proceed safely"
-                    '''
-                }
+                        echo "Exit codes:"
+                        echo "  - Unittest: $UNITTEST_STATUS"
+                        echo "  - Pytest: $PYTEST_STATUS"
+                        echo ""
+                        exit 1
+                    fi
+                    
+                    echo "✅ ALL TESTS PASSED! BUILD SUCCESS!"
+                    echo "🚀 Safe to proceed with deployment"
+                '''
             }
             post {
                 always {
