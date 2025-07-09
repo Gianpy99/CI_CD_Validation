@@ -1,0 +1,26 @@
+app.py:5:1: E302 expected 2 blank lines, found 1
+app.py:9:1: E302 expected 2 blank lines, found 1
+app.py:13:1: E302 expected 2 blank lines, found 1
+app.py:19:1: E302 expected 2 blank lines, found 1
+app.py:25:1: E302 expected 2 blank lines, found 1
+app.py:27:1: W293 blank line contains whitespace
+app.py:30:1: W293 blank line contains whitespace
+app.py:34:1: W293 blank line contains whitespace
+app.py:38:1: W293 blank line contains whitespace
+app.py:43:1: E305 expected 2 blank lines after class or function definition, found 1
+app.py:50:1: W293 blank line contains whitespace
+test_app.py:2:80: E501 line too long (81 > 79 characters)
+test_app.py:4:1: E302 expected 2 blank lines, found 1
+test_app.py:6:1: W293 blank line contains whitespace
+test_app.py:14:1: W293 blank line contains whitespace
+test_app.py:20:1: W293 blank line contains whitespace
+test_app.py:26:1: W293 blank line contains whitespace
+test_app.py:32:1: W293 blank line contains whitespace
+test_app.py:38:1: W293 blank line contains whitespace
+test_app.py:44:1: W293 blank line contains whitespace
+test_app.py:51:1: E302 expected 2 blank lines, found 1
+test_app.py:53:1: W293 blank line contains whitespace
+test_app.py:57:1: W293 blank line contains whitespace
+test_app.py:63:1: W293 blank line contains whitespace
+test_app.py:72:1: W293 blank line contains whitespace
+test_app.py:79:1: E305 expected 2 blank lines after class or function definition, found 1
